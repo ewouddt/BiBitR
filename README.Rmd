@@ -31,7 +31,7 @@ install.packages(c("flexclust","biclust"))
 
 ## Details
 
-*BiBitR* is a simple R wrapper which directly calls the original Java code for applying the BiBit algorithm after which the output is transformed to a `Biclust` S4 class object.
+`BiBitR` is a simple R wrapper which directly calls the original Java code for applying the BiBit algorithm after which the output is transformed to a `Biclust` S4 class object.
 The original Java code can be found at [http://eps.upo.es/bigs/BiBit.html](http://eps.upo.es/bigs/BiBit.html) by Domingo S. Rodriguez-Baena, Antonia J. Perez-Pulido and Jesus S. Aguilar-Ruiz.
 
 More details about the **BiBit** algorithm can be found in:
