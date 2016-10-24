@@ -24,6 +24,11 @@ devtools::install_github("hadley/devtools") # Only run this if your currently in
 devtools::install_github("ewouddt/BiBitR")
 ```
 
+Should the installation of `BiBitR` throw an error, please install the dependencies manually:
+```{r, eval=FALSE,echo=TRUE}
+install.packages(c("flexclust","biclust"))
+```
+
 ## Details
 
 *BiBitR* is a simple R wrapper which directly calls the original Java code for applying the BiBit algorithm after which the output is transformed to a `Biclust` S4 class object.
