@@ -24,7 +24,7 @@ Details
 
 More details about the **BiBit** algorithm can be found in:
 
--   Domingo S. Rodriguez-Baena, Antonia J. Perez-Pulido and Jesus S. Aguilar-Ruiz (2011), "A biclustering algorithm for extracting bit-patterns from binary datasets", *Bioinformatics*.
+-   [Domingo S. Rodriguez-Baena, Antonia J. Perez-Pulido and Jesus S. Aguilar-Ruiz (2011), "A biclustering algorithm for extracting bit-patterns from binary datasets", *Bioinformatics*](http://bioinformatics.oxfordjournals.org/content/early/2011/08/08/bioinformatics.btr464.abstract).
 
 The `bibit` function uses the original Java code directly (with the intended input and output). Because the Java code was not refactored, the `rJava` package could not be used.
 
