@@ -1,0 +1,15 @@
+Package: BiBitR
+Type: Package
+Title: R wrapper for Java implementation of BiBit
+Version: 0.01
+Date: 2016-10-24
+Author: De Troyer Ewoud
+Maintainer: De Troyer Ewoud <ewoud.detroyer@uhasselt.be>
+Description: A simple R wrapper for the Java BiBit algorithm from "A
+    biclustering algorithm for extracting bit-patterns from binary datasets, 2011"
+    from Domingo et al.
+License: GPL-3
+Imports:
+    foreign,
+    biclust
+RoxygenNote: 5.0.1
