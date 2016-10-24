@@ -19,6 +19,8 @@ NULL
 #' }
 #' Because of this, there is a chance of \emph{overhead} when applying the algorithm on large datasets. Make sure your machine has enough RAM available when applying to big data.
 #' 
+#' @author Ewoud De Troyer
+#' 
 #' @references Domingo S. Rodriguez-Baena, Antonia J. Perez-Pulido and Jesus S. Aguilar-Ruiz (2011), "A biclustering algorithm for extracting bit-patterns from binary datasets", \emph{Bioinformatics}
 #' 
 #' @export

@@ -40,6 +40,9 @@ result <- bibit(data,minr=5,minc=5)
 result
 }
 }
+\author{
+Ewoud De Troyer
+}
 \references{
 Domingo S. Rodriguez-Baena, Antonia J. Perez-Pulido and Jesus S. Aguilar-Ruiz (2011), "A biclustering algorithm for extracting bit-patterns from binary datasets", \emph{Bioinformatics}
 }
