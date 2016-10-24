@@ -37,7 +37,7 @@ Example
 -------
 
 ``` r
-libray(BiBitR)
+library(BiBitR)
 
 data <- matrix(sample(c(0,1),100*100,replace=TRUE,prob=c(0.9,0.1)),nrow=100,ncol=100)
 data[1:10,1:10] <- 1 # BC1
