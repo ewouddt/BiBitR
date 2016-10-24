@@ -4,7 +4,7 @@
 \alias{bibit}
 \title{The BiBit Algorithm}
 \usage{
-bibit(matrix, minr, minc)
+bibit(matrix, minr = 2, minc = 2)
 }
 \arguments{
 \item{matrix}{The binary input matrix.}

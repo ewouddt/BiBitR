@@ -40,7 +40,7 @@ NULL
 #' result <- bibit(data,minr=5,minc=5)
 #' result
 #' }
-bibit <- function(matrix,minr,minc){
+bibit <- function(matrix,minr=2,minc=2){
   
   pm <- match.call()
   time_arff <- round(proc.time()['elapsed']/60,2)
