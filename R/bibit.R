@@ -177,6 +177,7 @@ bibit2biclust <- function(data,resultpath){
 #' 
 #' @export
 #' @param bicresult A \code{Biclust} result. (e.g. The return object from \code{bibit})
+#' @param top The number of top row/col/size dimension which are searched for. (e.g. default \code{top=1} gives only the maximum)
 #' 
 #' @return A list containing:
 #' \itemize{
@@ -197,28 +198,54 @@ bibit2biclust <- function(data,resultpath){
 #' MaxBC(result)
 #' 
 #' }
-MaxBC <- function(bicresult){
+MaxBC <- function(bicresult,top=1){
   if(class(bicresult)!="Biclust"){stop("bicresult needs to be of class 'Biclust'")}
   
   colsum <- colSums(bicresult@RowxNumber)
   rowsum <- rowSums(bicresult@NumberxCol)
   sizesum <- rowsum*colsum
   
-  ind.colmax <- which(max(colsum)==colsum)
-  ind.rowmax <- which(max(rowsum)==rowsum)
-  ind.sizemax <- which(max(sizesum)==sizesum)
+  top.col <- sort(unique(colsum),decreasing=TRUE)[1:top]
+  top.row <- sort(unique(rowsum),decreasing=TRUE)[1:top]
+  top.size <- sort(unique(sizesum),decreasing=TRUE)[1:top]
+  
+  
+  for(i in 1:top){
+   
+    ind.colmax <- which(top.col[i]==colsum)
+    ind.rowmax <- which(top.row[i]==rowsum)
+    ind.sizemax <- which(top.size[i]==sizesum)
+    
+    if(i==1){
+      
+      row <- rbind(RowDim=rowsum[ind.rowmax],ColDim=colsum[ind.rowmax],SizeDim=sizesum[ind.rowmax])
+      colnames(row) <- paste0("BC",ind.rowmax)
+      
+      column <- rbind(RowDim=rowsum[ind.colmax],ColDim=colsum[ind.colmax],SizeDim=sizesum[ind.colmax])
+      colnames(column) <- paste0("BC",ind.colmax)
+      
+      size <- rbind(RowDim=rowsum[ind.sizemax],ColDim=colsum[ind.sizemax],SizeDim=sizesum[ind.sizemax])
+      colnames(size) <- paste0("BC",ind.sizemax)
+      
+    }else{
+      row.temp <- rbind(RowDim=rowsum[ind.rowmax],ColDim=colsum[ind.rowmax],SizeDim=sizesum[ind.rowmax])
+      colnames(row.temp) <- paste0("BC",ind.rowmax)
+      
+      column.temp <- rbind(RowDim=rowsum[ind.colmax],ColDim=colsum[ind.colmax],SizeDim=sizesum[ind.colmax])
+      colnames(column.temp) <- paste0("BC",ind.colmax)
+      
+      size.temp <- rbind(RowDim=rowsum[ind.sizemax],ColDim=colsum[ind.sizemax],SizeDim=sizesum[ind.sizemax])
+      colnames(size.temp) <- paste0("BC",ind.sizemax)
+    
+      row <- cbind(row,row.temp)
+      column <- cbind(column,column.temp)
+      size <- cbind(size,size.temp)
+    }
+    
+  }
   
 
-  row <- rbind(RowDim=rowsum[ind.rowmax],ColDim=colsum[ind.rowmax],SizeDim=sizesum[ind.rowmax])
-  colnames(row) <- paste0("BC",ind.rowmax)
-  
-  column <- rbind(RowDim=rowsum[ind.colmax],ColDim=colsum[ind.colmax],SizeDim=sizesum[ind.colmax])
-  colnames(column) <- paste0("BC",ind.colmax)
-  
-  size <- rbind(RowDim=rowsum[ind.sizemax],ColDim=colsum[ind.sizemax],SizeDim=sizesum[ind.sizemax])
-  colnames(size) <- paste0("BC",ind.sizemax)
   
   return(list(row=row,column=column,size=size))
 }
-
 
