@@ -33,7 +33,9 @@ The `bibit` function does the following:
 
 1.  Convert R matrix to a `.arff` output file.
 2.  Use the `.arff` file as input for the Java code which is called by `system()`.
-3.  The outputted `.txt` file from the Java BiBit algorithm is read in and transformed to a `Biclust` object. Because of this, there is a chance of *overhead* when applying the algorithm on large datasets. Make sure your machine has enough RAM available when applying to big data.
+3.  The outputted `.txt` file from the Java BiBit algorithm is read in and transformed to a `Biclust` object.
+
+Because of this procedure, there is a chance of *overhead* when applying the algorithm on large datasets. Make sure your machine has enough RAM available when applying to big data.
 
 Return Value
 ------------
