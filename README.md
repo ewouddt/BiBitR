@@ -11,10 +11,11 @@ devtools::install_github("hadley/devtools") # Only run this if your currently in
 devtools::install_github("ewouddt/BiBitR")
 ```
 
-Should the installation of `BiBitR` throw an error, please install the dependencies manually:
+Should the installation of `BiBitR` or `devtools::install_github("hadley/devtools")` throw an error, please install the dependencies manually, then `BiBitR`:
 
 ``` r
 install.packages(c("flexclust","biclust"))
+devtools::install_github("ewouddt/BiBitR")
 ```
 
 Details
