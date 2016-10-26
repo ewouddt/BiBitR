@@ -169,5 +169,56 @@ bibit2biclust <- function(data,resultpath){
   }
 }
 
+#' Finding Maximum Size Biclusters
+#' 
+#' Simple function which scans a \code{Biclust} result and returns which biclusters have maximum row, column or size (row*column).
+#' 
+#' @author Ewoud De Troyer
+#' 
+#' @export
+#' @param bicresult A \code{Biclust} result. (e.g. The return object from \code{bibit})
+#' 
+#' @return A list containing:
+#' \itemize{
+#' \item \code{$row}: A matrix containing in the columns the Biclusters which had maximum rows, and in the rows the Row Dimension, Column Dimension and Size.
+#' \item \code{$column}: A matrix containing in the columns the Biclusters which had maximum columns, and in the rows the Row Dimension, Column Dimension and Size.
+#' \item \code{$size}: A matrix containing in the columns the Biclusters which had maximum size, and in the rows the Row Dimension, Column Dimension and Size.
+#' }
+#' 
+#' @examples 
+#' \dontrun{
+#' data <- matrix(sample(c(0,1),100*100,replace=TRUE,prob=c(0.9,0.1)),nrow=100,ncol=100)
+#' data[1:10,1:10] <- 1 # BC1
+#' data[11:20,11:20] <- 1 # BC2
+#' data[21:30,21:30] <- 1 # BC3
+#' data <- data[sample(1:nrow(data),nrow(data)),sample(1:ncol(data),ncol(data))]
+#' result <- bibit(data,minr=2,minc=2)
+#' 
+#' MaxBC(result)
+#' 
+#' }
+MaxBC <- function(bicresult){
+  if(class(bicresult)!="Biclust"){stop("bicresult needs to be of class 'Biclust'")}
+  
+  colsum <- colSums(bicresult@RowxNumber)
+  rowsum <- rowSums(bicresult@NumberxCol)
+  sizesum <- rowsum*colsum
+  
+  ind.colmax <- which(max(colsum)==colsum)
+  ind.rowmax <- which(max(rowsum)==rowsum)
+  ind.sizemax <- which(max(sizesum)==sizesum)
+  
+
+  row <- rbind(RowDim=rowsum[ind.rowmax],ColDim=colsum[ind.rowmax],SizeDim=sizesum[ind.rowmax])
+  colnames(row) <- paste0("BC",ind.rowmax)
+  
+  column <- rbind(RowDim=rowsum[ind.colmax],ColDim=colsum[ind.colmax],SizeDim=sizesum[ind.colmax])
+  colnames(column) <- paste0("BC",ind.colmax)
+  
+  size <- rbind(RowDim=rowsum[ind.sizemax],ColDim=colsum[ind.sizemax],SizeDim=sizesum[ind.sizemax])
+  colnames(size) <- paste0("BC",ind.sizemax)
+  
+  return(list(row=row,column=column,size=size))
+}
 
 
