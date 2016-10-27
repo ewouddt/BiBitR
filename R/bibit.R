@@ -28,9 +28,9 @@ NULL
 #' @param minr The minimum number of rows of the Biclusters.
 #' @param minc The minimum number of columns of the Biclusters.
 #' @param arff_row_col If you want to circumvent the internal R function to convert the matrix to \code{.arff} format, provide the pathname of this file here. Additionally, two \code{.csv} files should be provided containing 1 column of row and column names. These two files should not contain a header or quotes around the names, simply 1 column with the names.\cr 
-#' (\emph{Example}: \code{arff_row_col=c("...\\data\\matrix.arff","...\\data\\rownames.csv","...\\data\\colnames.csv")})
+#' (\emph{Example}: \code{arff_row_col=c("...\\\\data\\\\matrix.arff","...\\\\data\\\\rownames.csv","...\\\\data\\\\colnames.csv")})
 #' @param output_path If as output, the original txt output of the Java code is desired, provide the outputh path here (without extension). In this case the \code{bibit} function will skip the transformation to a Biclust class object and simply return \code{NULL}.\cr 
-#' (\emph{Example}: \code{output_path="...\\out\\bibitresult"})
+#' (\emph{Example}: \code{output_path="...\\\\out\\\\bibitresult"})
 #' \cr
 #' (\emph{Description Output}: The following information about every bicluster generated will be printed in the output file: number of rows, number of columns, name of rows and name of columns.
 #' 
