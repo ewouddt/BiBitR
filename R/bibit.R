@@ -8,7 +8,7 @@ NULL
 
 #' @title The BiBit Algorithm
 #' 
-#' @description A R-wrapper which directly calls the original Java code for the BiBit algorithm (\url{http://eps.upo.es/bigs/BiBit.html} and transforms it to the output format of \code{Biclust}.
+#' @description A R-wrapper which directly calls the original Java code for the BiBit algorithm (\url{http://eps.upo.es/bigs/BiBit.html} and transforms it to the output format of the \code{Biclust} R package.
 #' 
 #' @details This function uses the original Java code directly (with the intended input and output). Because the Java code was not refactored, the \code{rJava} package could not be used.
 #' The \code{bibit} function does the following:
@@ -27,6 +27,12 @@ NULL
 #' @param matrix The binary input matrix.
 #' @param minr The minimum number of rows of the Biclusters.
 #' @param minc The minimum number of columns of the Biclusters.
+#' @param arff_row_col If you want to circumvent the internal R function to convert the matrix to \code{.arff} format, provide the pathname of this file here. Additionally, two \code{.csv} files should be provided containing 1 column of row and column names. These two files should not contain a header or quotes around the names, simply 1 column with the names.\cr 
+#' (\emph{Example}: \code{arff_row_col=c("...\\data\\matrix.arff","...\\data\\rownames.csv","...\\data\\colnames.csv")})
+#' @param output_path If as output, the original txt output of the Java code is desired, provide the outputh path here (without extension). In this case the \code{bibit} function will skip the transformation to a Biclust class object and simply return \code{NULL}.\cr 
+#' (\emph{Example}: \code{output_path="...\\out\\bibitresult"})
+#' \cr
+#' (\emph{Description Output}: The following information about every bicluster generated will be printed in the output file: number of rows, number of columns, name of rows and name of columns.
 #' 
 #' @return A Biclust S4 Class object.
 #' 
@@ -40,56 +46,78 @@ NULL
 #' result <- bibit(data,minr=5,minc=5)
 #' result
 #' }
-bibit <- function(matrix,minr=2,minc=2){
+bibit <- function(matrix=NULL,minr=2,minc=2,arff_row_col=NULL,output_path=NULL){
   
   pm <- match.call()
-  time_arff <- round(proc.time()['elapsed']/60,2)
+  
+  
+  if(is.null(arff_row_col)){
+    time_arff <- round(proc.time()['elapsed']/60,2)
     
-  # Check if matrix is binary (DISCRETIZED NOT YET IMPLEMENTED!)
-  if(!identical(as.vector(matrix),as.numeric(as.logical(matrix)))){stop("matrix is not a binary matrix!",call.=FALSE)}
-  
-  if(is.null(rownames(matrix))){rownames(matrix) <- paste0("Row",c(1:nrow(matrix)))}
-  if(is.null(colnames(matrix))){colnames(matrix) <- paste0("Col",c(1:ncol(matrix)))}
-  
-  # Check if rownames & colnames contain ; or ,  -> should be deleted and give warnings it was deleted
-  rowdot <- grepl(",",rownames(matrix))
-  if(sum(rowdot)>0){
-    rownames(matrix) <- gsub(",","",rownames(matrix))
-    warning(paste0("Row names ",paste0(which(rowdot),collapse = ",")," contained a ',' which was deleted."),call.=FALSE)
+    # Check if matrix is binary (DISCRETIZED NOT YET IMPLEMENTED!)
+    if(class(matrix)!="matrix"){stop("matrix parameter should contain a matrix object",call.=FALSE)}
+    if(!identical(as.vector(matrix),as.numeric(as.logical(matrix)))){stop("matrix is not a binary matrix!",call.=FALSE)}
+    
+    if(is.null(rownames(matrix))){rownames(matrix) <- paste0("Row",c(1:nrow(matrix)))}
+    if(is.null(colnames(matrix))){colnames(matrix) <- paste0("Col",c(1:ncol(matrix)))}
+    
+    # Check if rownames & colnames contain ; or ,  -> should be deleted and give warnings it was deleted
+    rowdot <- grepl(",",rownames(matrix))
+    if(sum(rowdot)>0){
+      rownames(matrix) <- gsub(",","",rownames(matrix))
+      warning(paste0("Row names ",paste0(which(rowdot),collapse = ",")," contained a ',' which was deleted."),call.=FALSE)
+    }
+    rowsc <- grepl(";",rownames(matrix))
+    if(sum(rowsc)>0){
+      rownames(matrix) <- gsub(";","",rownames(matrix))
+      warning(paste0("Row names ",paste0(which(rowsc),collapse = ",")," contained a ';' which was deleted."),call.=FALSE)
+    }
+    coldot <- grepl(",",colnames(matrix))
+    if(sum(coldot)>0){
+      colnames(matrix) <- gsub(",","",colnames(matrix))
+      warning(paste0("Column names ",paste0(which(coldot),collapse = ",")," contained a ',' which was deleted."),call.=FALSE)
+    }
+    colsc <- grepl(";",colnames(matrix))
+    if(sum(colsc)>0){
+      colnames(matrix) <- gsub(";","",colnames(matrix))
+      warning(paste0("Column names ",paste0(which(colsc),collapse = ",")," contained a ';' which was deleted."),call.=FALSE)
+    }
+    
+    
+    # Transform data into arff format
+    cat("Transform matrix into arff format...")
+    
+    bibitdata_path <- tempfile("bibitdata",fileext=".arff")
+    bibitrows_path <- tempfile("bibitrows",fileext=".csv")
+    bibitcols_path <- tempfile("bibitcols",fileext=".csv")
+    
+    write.arff(t(matrix),file=bibitdata_path)
+    write.table(matrix(rownames(matrix),ncol=1),quote=FALSE,row.names=FALSE,col.names=FALSE,file=bibitrows_path)
+    write.table(matrix(colnames(matrix),ncol=1),quote=FALSE,row.names=FALSE,col.names=FALSE,file=bibitcols_path)
+    
+    cat("DONE\n")
+    cat("\n")
+    
+    time_arff <- round(proc.time()['elapsed']/60-time_arff,2)
+    
+    
+  }else{
+    time_arff <- 0
+    
+    if(length(arff_row_col)!=3){stop("arff_row_col should contain 3 elements",call.=FALSE)}
+    bibitdata_path <- arff_row_col[1]
+    bibitrows_path <- arff_row_col[2]
+    bibitcols_path <- arff_row_col[3]
+    
   }
-  rowsc <- grepl(";",rownames(matrix))
-  if(sum(rowsc)>0){
-    rownames(matrix) <- gsub(";","",rownames(matrix))
-    warning(paste0("Row names ",paste0(which(rowsc),collapse = ",")," contained a ';' which was deleted."),call.=FALSE)
-  }
-  coldot <- grepl(",",colnames(matrix))
-  if(sum(coldot)>0){
-    colnames(matrix) <- gsub(",","",colnames(matrix))
-    warning(paste0("Column names ",paste0(which(coldot),collapse = ",")," contained a ',' which was deleted."),call.=FALSE)
-  }
-  colsc <- grepl(";",colnames(matrix))
-  if(sum(colsc)>0){
-    colnames(matrix) <- gsub(";","",colnames(matrix))
-    warning(paste0("Column names ",paste0(which(colsc),collapse = ",")," contained a ';' which was deleted."),call.=FALSE)
-  }
-  
-  
-  # Transform data into arff format
-  cat("Transform matrix into arff format...")
 
-  bibitdata_path <- tempfile("bibitdata",fileext=".arff")
-  bibitrows_path <- tempfile("bibitrows",fileext=".csv")
-  bibitcols_path <- tempfile("bibitcols",fileext=".csv")
+  if(is.null(output_path)){
+    bibitoutput_path <- tempfile("bibitoutput",fileext = "")
+  }else{
+    bibitoutput_path <- output_path
+  }
+
   
-  write.arff(t(matrix),file=bibitdata_path)
-  write.table(matrix(rownames(matrix),ncol=1),quote=FALSE,row.names=FALSE,col.names=FALSE,file=bibitrows_path)
-  write.table(matrix(colnames(matrix),ncol=1),quote=FALSE,row.names=FALSE,col.names=FALSE,file=bibitcols_path)
-  
-  bibitoutput_path <- tempfile("bibitoutput",fileext = "")
-  cat("DONE\n")
-  cat("\n")
-  
-  time_arff <- round(proc.time()['elapsed']/60-time_arff,2)
   time_bibit <- proc.time()['elapsed']/60
   
   javaloc <- paste0(.libPaths(),"/BiBitR/java/BiBit.jar")
@@ -103,29 +131,49 @@ bibit <- function(matrix,minr=2,minc=2){
   
   time_bibit <- round(proc.time()['elapsed']/60-time_bibit,2)
   
-  cat("\n")
-  cat("Transforming into biclust output...")
   
-  time_biclust <- round(proc.time()['elapsed']/60,2)
-  result <- bibit2biclust(data=matrix,resultpath=paste0(bibitoutput_path,"_1.txt"))
-  cat("DONE\n")
-  time_biclust <- round(proc.time()['elapsed']/60-time_biclust,2)
-  
-  result$info$time_minutes <- list(arff=time_arff,bibit=time_bibit,biclust=time_biclust,full=time_arff+time_bibit+time_biclust)
-  
-  result2 <- new("Biclust",Parameters=list(Call=pm,Method="BiBit"),
-                 RowxNumber=result$RowxNumber,
-                 NumberxCol=result$NumberxCol,
-                 Number=result$Number,
-                 info=list(Time_Min=result$info$time_minutes))
-                 
-  return(result2)
+  if(is.null(output_path)){
+    cat("\n")
+    cat("Transforming into biclust output...")
+    
+    time_biclust <- round(proc.time()['elapsed']/60,2)
+    result <- bibit2biclust(data=matrix,resultpath=paste0(bibitoutput_path,"_1.txt"),arff_row_col = arff_row_col)
+    cat("DONE\n")
+    time_biclust <- round(proc.time()['elapsed']/60-time_biclust,2)
+    
+    result$info$time_minutes <- list(arff=time_arff,bibit=time_bibit,biclust=time_biclust,full=time_arff+time_bibit+time_biclust)
+    
+    result2 <- new("Biclust",Parameters=list(Call=pm,Method="BiBit"),
+                   RowxNumber=result$RowxNumber,
+                   NumberxCol=result$NumberxCol,
+                   Number=result$Number,
+                   info=list(Time_Min=result$info$time_minutes))
+    
+    return(result2)
+    
+  }else{
+    return(NULL)
+  }
+
 }
 
 
 
-bibit2biclust <- function(data,resultpath){
+bibit2biclust <- function(data,resultpath,arff_row_col){
   result <- read.table(resultpath,header=TRUE,sep=";")
+  
+  if(is.null(arff_row_col)){
+    rownames.data <- rownames(data)
+    colnames.data <- colnames(data)
+    nrow.data <- nrow(data)
+    ncol.data <- ncol(data)
+  }else{
+    rownames.data <- as.character(read.table(arff_row_col[2],header=FALSE)[,1])
+    colnames.data <- as.character(read.table(arff_row_col[3],header=FALSE)[,1])
+    nrow.data <- length(rownames.data)
+    ncol.data <- length(colnames.data)
+  }
+  
   
   if(dim(result)[1]>0){
     
@@ -149,11 +197,11 @@ bibit2biclust <- function(data,resultpath){
     if(!identical(result$NumOfColumns,unlist(lapply(collist,FUN=length)))){warning("Issue reading column names...")}
     
     
-    rowlist_index <- lapply(rowlist,FUN=function(x){rownames(data) %in%  x})
-    collist_index <- lapply(collist,FUN=function(x){colnames(data) %in%  x})
+    rowlist_index <- lapply(rowlist,FUN=function(x){rownames.data %in%  x})
+    collist_index <- lapply(collist,FUN=function(x){colnames.data %in%  x})
     
-    RowxNumber <- matrix(unlist(rowlist_index),byrow=FALSE,nrow=nrow(data),ncol=Number)
-    NumberxCol <- matrix(unlist(collist_index),byrow=TRUE,nrow=Number,ncol=ncol(data))
+    RowxNumber <- matrix(unlist(rowlist_index),byrow=FALSE,nrow=nrow.data,ncol=Number)
+    NumberxCol <- matrix(unlist(collist_index),byrow=TRUE,nrow=Number,ncol=ncol.data)
     
     # again quick BC dimension check 
     if(!identical(result$NumOfRows,as.integer(colSums(RowxNumber)))){warning("Issue row BC dimension")}
@@ -248,4 +296,6 @@ MaxBC <- function(bicresult,top=1){
   
   return(list(row=row,column=column,size=size))
 }
+
+
 
