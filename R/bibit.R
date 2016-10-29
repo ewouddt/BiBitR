@@ -141,14 +141,34 @@ bibit <- function(matrix=NULL,minr=2,minc=2,arff_row_col=NULL,output_path=NULL){
     cat("DONE\n")
     time_biclust <- round(proc.time()['elapsed']/60-time_biclust,2)
     
-    result$info$time_minutes <- list(arff=time_arff,bibit=time_bibit,biclust=time_biclust,full=time_arff+time_bibit+time_biclust)
-    
-    result2 <- new("Biclust",Parameters=list(Call=pm,Method="BiBit"),
-                   RowxNumber=result$RowxNumber,
-                   NumberxCol=result$NumberxCol,
-                   Number=result$Number,
-                   info=list(Time_Min=result$info$time_minutes))
-    
+
+    if(!is.null(result)){
+      result2 <- new("Biclust",Parameters=list(Call=pm,Method="BiBit"),
+                     RowxNumber=result$RowxNumber,
+                     NumberxCol=result$NumberxCol,
+                     Number=result$Number,
+                     info=list(Time_Min=list(arff=time_arff,bibit=time_bibit,biclust=time_biclust,full=time_arff+time_bibit+time_biclust)))
+      
+    }else{
+      
+      if(!is.null(arff_row_col)){
+        rownames.data <- as.character(read.table(arff_row_col[2],header=FALSE)[,1])
+        colnames.data <- as.character(read.table(arff_row_col[3],header=FALSE)[,1])
+        nrow.data <- length(rownames.data)
+        ncol.data <- length(colnames.data)
+      }else{
+        nrow.data <- nrow(matrix)
+        ncol.data <- ncol(matrix)
+      }
+      
+      
+      result2 <- new("Biclust",Parameters=list(Call=pm,Method="BiBit"),
+                     RowxNumber=matrix(FALSE,nrow=nrow.data,ncol=1),
+                     NumberxCol=matrix(FALSE,nrow=1,ncol=ncol.data),
+                     Number=0,
+                     info=list(Time_Min=list(arff=time_arff,bibit=time_bibit,biclust=time_biclust,full=time_arff+time_bibit+time_biclust)))
+    }
+
     return(result2)
     
   }else{
