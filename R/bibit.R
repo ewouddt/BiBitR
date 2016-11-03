@@ -269,8 +269,8 @@ bibit2biclust <- function(data,resultpath,arff_row_col){
 MaxBC <- function(bicresult,top=1){
   if(class(bicresult)!="Biclust"){stop("bicresult needs to be of class 'Biclust'")}
   
-  colsum <- colSums(bicresult@RowxNumber)
-  rowsum <- rowSums(bicresult@NumberxCol)
+  rowsum <- colSums(bicresult@RowxNumber)
+  colsum <- rowSums(bicresult@NumberxCol)
   sizesum <- rowsum*colsum
   
   top.col <- sort(unique(colsum),decreasing=TRUE)[1:top]
