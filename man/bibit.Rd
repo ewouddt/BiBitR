@@ -26,7 +26,7 @@ bibit(matrix = NULL, minr = 2, minc = 2, arff_row_col = NULL,
 A Biclust S4 Class object.
 }
 \description{
-A R-wrapper which directly calls the original Java code for the BiBit algorithm (\url{http://eps.upo.es/bigs/BiBit.html} and transforms it to the output format of the \code{Biclust} R package.
+A R-wrapper which directly calls the original Java code for the BiBit algorithm (\url{http://eps.upo.es/bigs/BiBit.html}) and transforms it to the output format of the \code{Biclust} R package.
 }
 \details{
 This function uses the original Java code directly (with the intended input and output). Because the Java code was not refactored, the \code{rJava} package could not be used.

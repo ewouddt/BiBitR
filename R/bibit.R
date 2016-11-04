@@ -8,7 +8,7 @@ NULL
 
 #' @title The BiBit Algorithm
 #' 
-#' @description A R-wrapper which directly calls the original Java code for the BiBit algorithm (\url{http://eps.upo.es/bigs/BiBit.html} and transforms it to the output format of the \code{Biclust} R package.
+#' @description A R-wrapper which directly calls the original Java code for the BiBit algorithm (\url{http://eps.upo.es/bigs/BiBit.html}) and transforms it to the output format of the \code{Biclust} R package.
 #' 
 #' @details This function uses the original Java code directly (with the intended input and output). Because the Java code was not refactored, the \code{rJava} package could not be used.
 #' The \code{bibit} function does the following:
