@@ -23,6 +23,7 @@ make_arff_row_col(matrix, name = "data", path = "")
 }
 \description{
 Transform the R matrix object to 1 \code{.arff} for the data and 2 \code{.csv} files for the row and column names. These are the 3 files required for the original BiBit Java algorithm
+The path of these 3 files can then be used in the \code{arff_row_col} parameter of the \code{bibit} function.
 }
 \examples{
 \dontrun{
