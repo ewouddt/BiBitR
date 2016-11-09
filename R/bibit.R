@@ -319,3 +319,69 @@ MaxBC <- function(bicresult,top=1){
 
 
 
+
+
+
+#' Transform R matrix object to BiBit input files.
+#' 
+#' Transform the R matrix object to 1 \code{.arff} for the data and 2 \code{.csv} files for the row and column names. These are the 3 files required for the original BiBit Java algorithm
+#' 
+#' @author Ewoud De Troyer
+#' 
+#' @export
+#' @param matrix The binary input matrix.
+#' @param name Basename for the 3 input files.
+#' @param path Directory path where to write the 3 input files to.
+#' 
+#' @return 3 input files for BiBit:
+#' \itemize{
+#' \item 1 \code{.arff} file containing the data.
+#' \item 1 \code{.csv} file for the row names. The file contains 1 column of names without quotation.
+#' \item 1 \code{.csv} file for the column names. The file contains 1 column of names without quotation.
+#' }
+#' 
+#' @examples 
+#' \dontrun{
+#' data <- matrix(sample(c(0,1),100*100,replace=TRUE,prob=c(0.9,0.1)),nrow=100,ncol=100)
+#' data[1:10,1:10] <- 1 # BC1
+#' data[11:20,11:20] <- 1 # BC2
+#' data[21:30,21:30] <- 1 # BC3
+#' data <- data[sample(1:nrow(data),nrow(data)),sample(1:ncol(data),ncol(data))]
+#' 
+#' make_arff_row_col(matrix=data,name="data",path="")
+#' }
+make_arff_row_col <- function(matrix,name="data",path=""){
+  if(class(matrix)!="matrix"){stop("matrix parameter should contain a matrix object",call.=FALSE)}
+  if(!identical(as.vector(matrix),as.numeric(as.logical(matrix)))){stop("matrix is not a binary matrix!",call.=FALSE)}
+  
+  if(is.null(rownames(matrix))){rownames(matrix) <- paste0("Row",c(1:nrow(matrix)))}
+  if(is.null(colnames(matrix))){colnames(matrix) <- paste0("Col",c(1:ncol(matrix)))}
+  
+  # Check if rownames & colnames contain ; or ,  -> should be deleted and give warnings it was deleted
+  rowdot <- grepl(",",rownames(matrix))
+  if(sum(rowdot)>0){
+    rownames(matrix) <- gsub(",","",rownames(matrix))
+    warning(paste0("Row names ",paste0(which(rowdot),collapse = ",")," contained a ',' which was deleted."),call.=FALSE)
+  }
+  rowsc <- grepl(";",rownames(matrix))
+  if(sum(rowsc)>0){
+    rownames(matrix) <- gsub(";","",rownames(matrix))
+    warning(paste0("Row names ",paste0(which(rowsc),collapse = ",")," contained a ';' which was deleted."),call.=FALSE)
+  }
+  coldot <- grepl(",",colnames(matrix))
+  if(sum(coldot)>0){
+    colnames(matrix) <- gsub(",","",colnames(matrix))
+    warning(paste0("Column names ",paste0(which(coldot),collapse = ",")," contained a ',' which was deleted."),call.=FALSE)
+  }
+  colsc <- grepl(";",colnames(matrix))
+  if(sum(colsc)>0){
+    colnames(matrix) <- gsub(";","",colnames(matrix))
+    warning(paste0("Column names ",paste0(which(colsc),collapse = ",")," contained a ';' which was deleted."),call.=FALSE)
+  }
+  
+  write.arff(t(matrix),file=paste0(getwd(),"/",path,"/",name,"_arff.arff"))
+  write.table(matrix(rownames(matrix),ncol=1),quote=FALSE,row.names=FALSE,col.names=FALSE,file=paste0(getwd(),"/",path,"/",name,"_rownames.csv"))
+  write.table(matrix(colnames(matrix),ncol=1),quote=FALSE,row.names=FALSE,col.names=FALSE,file=paste0(getwd(),"/",path,"/",name,"_colnames.csv"))
+  
+}
+

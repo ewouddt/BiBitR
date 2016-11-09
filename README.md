@@ -37,6 +37,9 @@ The `bibit` function does the following:
 
 Because of this procedure, there is a chance of *overhead* when applying the algorithm on large datasets. Make sure your machine has enough RAM available when applying to big data.
 
+**Note:**
+If you want to circumvent the internal R function to convert the matrix to `.arff` format, look at the documentation of the `arff_row_col` parameter of the `bibit` function. You can input the original input files for the java algorithm with this parameter. The original input files can also be generated with the `make_arff_row_col` function in the package.
+
 Return Value
 ------------
 
