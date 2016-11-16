@@ -77,7 +77,7 @@ Example
 library(BiBitR)
 
 data <- matrix(sample(c(0,1),100*100,replace=TRUE,prob=c(0.9,0.1)),nrow=100,ncol=100)
-data[1:10,1:10] <- 1 # BC1
+data[1:10,1:10] <- 1   # BC1
 data[11:20,11:20] <- 1 # BC2
 data[21:30,21:30] <- 1 # BC3
 data <- data[sample(1:nrow(data),nrow(data)),sample(1:ncol(data),ncol(data))]
