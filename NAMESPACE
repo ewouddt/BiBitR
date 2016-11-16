@@ -2,6 +2,7 @@
 
 export(MaxBC)
 export(bibit)
+export(bibit2)
 export(make_arff_row_col)
 import(biclust)
 importFrom(foreign,write.arff)
