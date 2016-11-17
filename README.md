@@ -65,6 +65,17 @@ The `noise` parameter determines the amount of zero's allowed in the bicluster (
 -   `0<noise<1`: The noise parameter will be a noise percentage. The number of allowed 0's in a (extra) row in the bicluster will depend on the column size of the bicluster. More specifically `zeros_allowed = ceiling(noise * columnsize)`. For example for `noise=0.10` and a bicluster column size of `5`, the number of allowed 0's would be `1`.
 -   `noise>=1`: The noise parameter will be the number of allowed 0's in a (extra) row in the bicluster independent from the column size of the bicluster. In this noise option, the noise parameter should be an integer.
 
+Alternative Strategy
+--------------------
+
+Normally you would apply BiBit (with/without noise) directly on the binary data. However due to the nature of the algorithm, namely starting an exhaustive search from each row-pair, it is also possible to look for specific patterns of interest.
+
+To do this, simply add 2 (artificial) identical rows which contain the pattern/motif of interest (e.g. 2 rows with 1's in specific columns and 0 everywhere else). You can do this multiple times if multiple patterns/motifs are of interest.
+
+After applying BiBit (preferable with noise allowance) on the data with the extra artificial rows, search through all discovered biclusters to find the biclusters which contain the artificial rows, as well as the biclusters which started from the articial row pair. See functions `rows_in_BC` and `rows_full1_in_BC`.
+
+*Future To Do:* Adapt the BiBit algorithm to limit it to only start from the artificial rows.
+
 Return Value
 ------------
 
