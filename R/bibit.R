@@ -3,6 +3,8 @@
 
 #' @importFrom foreign write.arff 
 #' @import biclust
+#' @importFrom methods new
+#' @importFrom utils read.table write.table
 NULL
 
 
