@@ -1,3 +1,5 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
-STRATEGYbibit2.txt
+STRATEGYbibit2
+README.Rmd
+cran-comments.md
