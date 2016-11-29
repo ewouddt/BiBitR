@@ -3,6 +3,14 @@
 Installing the BiBitR Package
 -----------------------------
 
+#### Release
+
+``` r
+install.packages("BiBitR")
+```
+
+#### Development
+
 ``` r
 install.packages("devtools") # If not yet installed on your R Version
 devtools::install_github("hadley/devtools") # Only run this if your currently installed 
