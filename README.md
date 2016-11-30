@@ -3,12 +3,6 @@
 Installing the BiBitR Package
 -----------------------------
 
-#### Release
-
-``` r
-install.packages("BiBitR")
-```
-
 #### Development
 
 ``` r
