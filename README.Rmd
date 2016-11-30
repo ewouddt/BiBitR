@@ -15,6 +15,11 @@ knitr::opts_chunk$set(
 
 ## Installing the BiBitR Package
 
+#### Release
+
+```{r, eval=FALSE,echo=TRUE}
+install.packages("BiBitR")
+```
 
 #### Development
 
