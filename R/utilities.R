@@ -318,33 +318,45 @@ GOF <- function(matrix,bicresult,alpha=1,verbose=FALSE){
 
   if(alpha<0 | alpha>1){stop("alpha should be between 0 and 1")}
   
-  outputlist <- vector("list",bicresult@Number)
-  names(outputlist) <- paste0("BC",1:bicresult@Number)
+  outputlist_S <- vector("list",bicresult@Number)
+  names(outputlist_S) <- paste0("BC",1:bicresult@Number)
+
+  outputdf <- matrix(NA,nrow=bicresult@Number,ncol=2,dimnames=list(names(outputlist_S),c("score","score_idea")))
   
-  for(i in 1:length(outputlist)){
-    BC <- matrix[bicresult@RowxNumber[,i],bicresult@NumberxCol[i,]]
     
-    outputlist[[i]] <- fitness_score(BC,alpha=alpha)
+  for(i in 1:length(outputlist_S)){
+    BC <- matrix[bicresult@RowxNumber[,i],bicresult@NumberxCol[i,]]
+    temp <- fitness_score(BC,alpha=alpha)
+    outputlist_S[[i]] <- temp$S_i
+    outputdf[i,] <- c(temp$score,temp$score_idea)
   }
-  class(outputlist) <- "GOFBC"
+  
+  output <- list(fitness=as.data.frame(outputdf),S_i=outputlist_S)
+  
+  class(output) <- "GOFBC"
   
   # Do a summary print
-  if(verbose){summary(outputlist)}
+  if(verbose){summary(output)}
   
-  return(outputlist)
+  return(output)
 }
 
 
 #' @export
 summary.GOFBC <- function(object,...){
   
-  score <- unlist(lapply(object,FUN=function(x){return(x$score)}))
-  score_idea <- unlist(lapply(object,FUN=function(x){return(x$score_idea)}))
-  names(score) <- names(score_idea) <- names(object)
+  score <- object$fitness$score
+  score_idea <- object$fitness$score_idea
+  names(score) <- names(score_idea) <- rownames(object$fitness)
   
-  selnumber <- ifelse(length(score)>=10,10,length(score))
+  selnumber <- ifelse(length(score)>=5,5,length(score))
   
+  cat("Top 5 Fitness Scores:\n")
+  cat("---------------------\n")
   print(sort(score,decreasing=TRUE)[1:selnumber])
+  cat("\n")
+  cat("Top 5 Experimental Fitness Scores:\n")
+  cat("----------------------------------\n")
   print(sort(score_idea,decreasing=TRUE)[1:selnumber])
   
 }
