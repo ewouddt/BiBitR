@@ -265,3 +265,89 @@ rows_full1_in_BC <- function(matrix,bicresult,rows){
 }
 
 
+fitness_score <- function(BC,alpha=1){
+  if(!identical(as.numeric(as.vector(BC)),as.numeric(as.logical(BC)))){stop("BC is not a binary matrix!",call.=FALSE)}
+  
+  W_ik <- apply(BC,MARGIN=1,FUN=sum)
+  
+  p_i <- W_ik/ncol(BC)
+  
+  H_i <- sapply(p_i,FUN=function(x){
+    if(x==0 | x==1){
+      return(0)
+    }else{
+      return(-x*log(x,base=2)-(1-x)*log(1-x,base=2))
+    }
+  })
+  
+  S_i <- rep(0,length(H_i))
+  S_i[p_i>0.5] <- W_ik[p_i>0.5]*(1-H_i[p_i>0.5])^alpha
+  
+  return(list(S_i=S_i,score=sum(S_i),score_idea=sum(S_i)/(nrow(BC)*ncol(BC))))
+}
+
+
+#' @title Computing Fitness Score of Biclustering Result
+#' 
+#' @description Experimental function, still needs tuning. Will eventually be integrated in bibit2 function. 
+#' @author Ewoud De Troyer
+#' 
+#' @export
+#' @param matrix The binary input matrix.
+#' @param bicresult A \code{Biclust} result. (e.g. The return object from \code{bibit} or \code{bibit2})
+#' @param alpha Weighting factor between 0 and 1.
+#' @param verbose Boolean value to show a short summary.
+#' @return A matrix containing the biclusters in the columns and the row, column and size dimensions on the rows.
+#' @examples
+#' \dontrun{
+#' data <- matrix(sample(c(0,1),100*100,replace=TRUE,prob=c(0.9,0.1)),nrow=100,ncol=100)
+#' data[1:10,1:10] <- 1 # BC1
+#' data[11:20,11:20] <- 1 # BC2
+#' data[21:30,21:30] <- 1 # BC3
+#' data <- data[sample(1:nrow(data),nrow(data)),sample(1:ncol(data),ncol(data))]
+#' 
+#' result1 <- bibit2(data,minr=5,minc=5,noise=0.2)
+#' result1
+#' 
+#' fitness <- GOF(matrix=data,bicresult=result1,alpha=0.5)
+#' summary(fitness)
+#' }
+GOF <- function(matrix,bicresult,alpha=1,verbose=FALSE){
+  if(class(bicresult)!="Biclust"){stop("bicresult is not a Biclust class object",call.=FALSE)}
+  if(class(matrix)!="matrix"){stop("matrix parameter should contain a matrix object",call.=FALSE)}
+
+  if(alpha<0 | alpha>1){stop("alpha should be between 0 and 1")}
+  
+  outputlist <- vector("list",bicresult@Number)
+  names(outputlist) <- paste0("BC",1:bicresult@Number)
+  
+  for(i in 1:length(outputlist)){
+    BC <- matrix[bicresult@RowxNumber[,i],bicresult@NumberxCol[i,]]
+    
+    outputlist[[i]] <- fitness_score(BC,alpha=alpha)
+  }
+  class(outputlist) <- "GOFBC"
+  
+  # Do a summary print
+  if(verbose){summary(outputlist)}
+  
+  return(outputlist)
+}
+
+
+#' @export
+summary.GOFBC <- function(object,...){
+  
+  score <- unlist(lapply(object,FUN=function(x){return(x$score)}))
+  score_idea <- unlist(lapply(object,FUN=function(x){return(x$score_idea)}))
+  names(score) <- names(score_idea) <- names(object)
+  
+  selnumber <- ifelse(length(score)>=10,10,length(score))
+  
+  print(sort(score,decreasing=TRUE)[1:selnumber])
+  print(sort(score_idea,decreasing=TRUE)[1:selnumber])
+  
+}
+
+
+
