@@ -1,11 +1,11 @@
-
 ## IMPORTS ##
 
 #' @importFrom foreign write.arff 
 #' @import biclust
 #' @importFrom methods new
-#' @importFrom utils read.table write.table
+#' @importFrom utils read.table write.table combn
 NULL
+
 
 
 #' @title The BiBit Algorithm
@@ -378,7 +378,7 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
   
   time_bibit <- proc.time()['elapsed']/60
   
-  javaloc <- paste0(.libPaths(),"/BiBit2R/java/BiBit2.jar")
+  javaloc <- paste0(.libPaths(),"/BiBitR/java/BiBit2.jar")
   # javaloc <- gsub("/","\\\\",javaloc)
   
   # BiBit.jar location needs to be standardized for package location! # .libPaths()
@@ -451,11 +451,15 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
 # pattern_matrix[3,13:20] <- 1
 # 
 # 
-# out <- bibit3(matrix=data,minr=2,minc=2,noise=0.1,pattern_matrix=pattern_matrix,subpattern=FALSE,extend_columns=TRUE,pattern_combinations=TRUE,arff_row_col=NULL)
-# 
+# out <- bibit3(matrix=data,minr=2,minc=2,noise=0.1,pattern_matrix=pattern_matrix,subpattern=TRUE,extend_columns=TRUE,pattern_combinations=TRUE,arff_row_col=NULL)
+# out
 # 
 # data[out$Pattern1$FullPattern@RowxNumber[,1],out$Pattern1$FullPattern@NumberxCol[1,]]
 # data[out$Pattern1$Extended@RowxNumber[,1],out$Pattern1$Extended@NumberxCol[1,]]
+# 
+# bibit3_patternBC(result=out,matrix=data,pattern=c(1),type=c("full","sub","ext"),BC=c(1))
+# bibit3_patternBC(result=out,matrix=data,pattern=c(1),type=c("full","sub","ext"),BC=c(1,2))
+# 
 # 
 # data[out$Pattern2$FullPattern@RowxNumber[,1],out$Pattern2$FullPattern@NumberxCol[1,]]
 # data[out$Pattern2$Extended@RowxNumber[,1],out$Pattern2$Extended@NumberxCol[1,]]
@@ -486,9 +490,9 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
 #' 
 #' Three types of Biclusters can be discovered:
 #' \describe{
-#' \item{Full Pattern: }Bicluster which overlaps completely (within allowed noise levels) with the provided pattern. The column size of this bicluster is always equal to the number of 1's in the pattern.
-#' \item{Sub Pattern: }Biclusters which overlap with a part of the provided pattern within allowed noise levels. Will only be given if \code{subpattern=TRUE} (default). Setting this option to \code{FALSE} decreases computation time.
-#' \item{Extended: }Using the resulting biclusters from the full and sub patterns, other columns will be attempted to be added to the biclusters while keeping the noise as low as possible (the number of rows in the BC stays constant). Naturally the articially added pattern rows will not be taken into account with the noise levels as they are 0 in each other column.
+#' \item{\emph{Full Pattern: }}{Bicluster which overlaps completely (within allowed noise levels) with the provided pattern. The column size of this bicluster is always equal to the number of 1's in the pattern.}
+#' \item{\emph{Sub Pattern: }}{Biclusters which overlap with a part of the provided pattern within allowed noise levels. Will only be given if \code{subpattern=TRUE} (default). Setting this option to \code{FALSE} decreases computation time.}
+#' \item{\emph{Extended: }}{Using the resulting biclusters from the full and sub patterns, other columns will be attempted to be added to the biclusters while keeping the noise as low as possible (the number of rows in the BC stays constant). Naturally the articially added pattern rows will not be taken into account with the noise levels as they are 0 in each other column.}
 #' \cr The question which is attempted to be answered here is \emph{`Do the rows, which overlap partly or fully with the given pattern, have other similarities outside the given pattern?`}
 #' } 
 #' 
@@ -497,7 +501,7 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
 #' The default algorithm is then slightly altered to only start from this articial row pair (=Full Pattern) or from 1 artificial row and 1 other row (=Sub Pattern).
 #' 
 #' \emph{Note:}
-#' The \code{arff_row_col} can still be provided in case of large data matrices, but the \code{.arff} file should already contain the pattern of interest in the first two rows. Consequently not more than 1 pattern at a time can be investigated with a single call of \code{bibit3}.
+#' \cr The \code{arff_row_col} can still be provided in case of large data matrices, but the \code{.arff} file should already contain the pattern of interest in the first two rows. Consequently not more than 1 pattern at a time can be investigated with a single call of \code{bibit3}.
 #' 
 #' @author Ewoud De Troyer
 #' 
@@ -521,7 +525,7 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
 #' @param arff_row_col Same argument as in \code{\link{bibit}} and \code{\link{bibit2}}. However you can only provide 1 pattern by using this option. For \code{bibit3} to work, the pattern has to be added 2 times on top of the matrix (= identical first 2 rows).
 
 
-#' @return A S3 list object, \code{`bibit3'} in which each element (apart from the last one) corresponds with a provided pattern or combination thereof. \cr
+#' @return A S3 list object, \code{"bibit3"} in which each element (apart from the last one) corresponds with a provided pattern or combination thereof. \cr
 #' Each element is a list containing:
 #' \describe{
 #' \item{\code{Number}: }{Number of Initially found BC's by applying BiBit with the provided pattern.} 
@@ -535,6 +539,7 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
 #' 
 #' @examples 
 #' \dontrun{
+#' # TO DO
 #' }
 bibit3 <- function(matrix=NULL,minr=2,minc=2,noise=0,pattern_matrix=NULL,subpattern=TRUE,extend_columns=TRUE,pattern_combinations=FALSE,arff_row_col=NULL){
   
@@ -668,8 +673,8 @@ bibit3 <- function(matrix=NULL,minr=2,minc=2,noise=0,pattern_matrix=NULL,subpatt
     
     time_bibit <- proc.time()['elapsed']/60
     
-    # javaloc <- paste0(.libPaths(),"/BiBit2R/java/BiBit3.jar")
-    javaloc <- paste0(getwd(),"/inst/java/BiBit3.jar")
+    javaloc <- paste0(.libPaths(),"/BiBitR/java/BiBit3.jar")
+    # javaloc <- paste0(getwd(),"/inst/java/BiBit3.jar")
     
     subpat <- ifelse(subpattern,1,0)
     
@@ -857,4 +862,8 @@ BC_column_extension_pattern <- function(result,data,noise){
   
   return(result)
 }
+
+
+
+
 

@@ -393,8 +393,8 @@ print.bibit3 <- function(x,...){
       }
       else
       {
-        if(n==1) cat("\nThere was one cluster found with\n ",sum(object@RowxNumber[,1]), "Rows and ", sum(object@NumberxCol), "columns")
-        if(n==0) cat("\nThere was no cluster found")
+        if(n==1) cat("\nThere was one cluster found with\n ",sum(object@RowxNumber[,1]), "Rows and ", sum(object@NumberxCol), "columns\n")
+        if(n==0) cat("\nThere was no cluster found\n")
       }
       cat("\n\n")
       
@@ -405,10 +405,9 @@ print.bibit3 <- function(x,...){
 }
 
 
-
-#'@export
+#' @export
 summary.bibit3 <- function(object,...){
-  print(x=object)
+  print(object)
 }
 
 
@@ -421,6 +420,14 @@ summary.bibit3 <- function(object,...){
 #' @export
 #' @param result Result produced by \code{\link{bibit3}}
 #' @param matrix The binary input matrix.
+#' @param pattern Vector containing either the number or name of which patterns the BC results should be extracted.
+#' @param type Vector for which BC results should be printed.
+#' \itemize{
+#' \item Full Pattern (\code{"full"})
+#' \item Sub Pattern (\code{"sub"})
+#' \item Extended (\code{"ext"})
+#' }
+#' @param BC Vector of BC indices which should be printed, conditioned on \code{pattern} and \code{type}.
 #' @return Prints querried biclusters.
 #' @examples
 #' \dontrun{
@@ -449,6 +456,7 @@ bibit3_patternBC <- function(result,matrix,pattern=c(1),type=c("full","sub","ext
   
   if(sum(!(type %in% c("full","sub","ext")))>0){stop("type contains wrong input")}
   type <- sapply(type,FUN=function(x){switch(x,full="FullPattern",sub="SubPattern",ext="Extended")})
+  names(type) <- NULL
   
   if(class(BC)!="numeric"){stop("BC should be numeric vector")}
   
@@ -458,14 +466,14 @@ bibit3_patternBC <- function(result,matrix,pattern=c(1),type=c("full","sub","ext
       for(i.BC in BC){
         
         if(i.BC<=result[[i.pattern]][[i.type]]@Number){
-          cat(paste0(toupper(names(result)[i.pattern]," - ",i.type," - BC ",i.BC)))
+          cat(paste0(toupper(names(result)[i.pattern])," - ",i.type," - BC ",i.BC))
           
-          extra_rows <- matrix(rep(result$pattern_matrix[i.pattern,],2),nrow=2,byrow=TRUE,dimnames=list(paste0(names(result)[i.pattern],c("Art1","Art2")),colnames(matrix)))
+          extra_rows <- matrix(rep(result$pattern_matrix[i.pattern,],2),nrow=2,byrow=TRUE,dimnames=list(paste0(names(result)[i.pattern],c("_Art1","_Art2")),colnames(matrix)))
           
           BCprint <- matrix[result[[i.pattern]][[i.type]]@RowxNumber[,i.BC],result[[i.pattern]][[i.type]]@NumberxCol[i.BC,]]
-          
-          print(rbind(extra_rows,BCprint))
-          cat("\n")
+          cat("\n\n")
+          print(rbind(extra_rows[,result[[i.pattern]][[i.type]]@NumberxCol[i.BC,]],BCprint))
+          cat("\n\n")
         }
         
 
@@ -474,6 +482,8 @@ bibit3_patternBC <- function(result,matrix,pattern=c(1),type=c("full","sub","ext
     
   }
 }
+
+
 
 
 
