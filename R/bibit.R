@@ -438,17 +438,30 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
 
 
 # Example:
-set.seed(1)
-data <- matrix(sample(c(0,1),100*100,replace=TRUE,prob=c(0.9,0.1)),nrow=100,ncol=100)
-data[1:10,1:10] <- 1 # BC1
-data[11:20,11:20] <- 1 # BC2
-data[21:30,21:30] <- 1 # BC3
-# data <- data[sample(1:nrow(data),nrow(data)),sample(1:ncol(data),ncol(data))]
-
-pattern_matrix <- matrix(0,nrow=1,ncol=100)
-pattern_matrix[1,1:7] <- 1
-
-out <- bibit3(matrix=data,minr=2,minc=2,noise=0.1,pattern_matrix=pattern_matrix,subpattern=TRUE,extend_columns=TRUE,pattern_combinations=FALSE,arff_row_col=NULL)
+# set.seed(1)
+# data <- matrix(sample(c(0,1),100*100,replace=TRUE,prob=c(0.9,0.1)),nrow=100,ncol=100)
+# data[1:10,1:10] <- 1 # BC1
+# data[11:20,11:20] <- 1 # BC2
+# data[21:30,21:30] <- 1 # BC3
+# # data <- data[sample(1:nrow(data),nrow(data)),sample(1:ncol(data),ncol(data))]
+# 
+# pattern_matrix <- matrix(0,nrow=3,ncol=100)
+# pattern_matrix[1,1:7] <- 1
+# pattern_matrix[2,11:15] <- 1
+# pattern_matrix[3,13:20] <- 1
+# 
+# 
+# out <- bibit3(matrix=data,minr=2,minc=2,noise=0.1,pattern_matrix=pattern_matrix,subpattern=FALSE,extend_columns=TRUE,pattern_combinations=TRUE,arff_row_col=NULL)
+# 
+# 
+# data[out$Pattern1$FullPattern@RowxNumber[,1],out$Pattern1$FullPattern@NumberxCol[1,]]
+# data[out$Pattern1$Extended@RowxNumber[,1],out$Pattern1$Extended@NumberxCol[1,]]
+# 
+# data[out$Pattern2$FullPattern@RowxNumber[,1],out$Pattern2$FullPattern@NumberxCol[1,]]
+# data[out$Pattern2$Extended@RowxNumber[,1],out$Pattern2$Extended@NumberxCol[1,]]
+# 
+# data[out[[3]]$FullPattern@RowxNumber[,1],out[[3]]$FullPattern@NumberxCol[1,]]
+# data[out[[3]]$Extended@RowxNumber[,1],out[[3]]$Extended@NumberxCol[1,]]
 
 
 # TO DO:
@@ -474,7 +487,7 @@ out <- bibit3(matrix=data,minr=2,minc=2,noise=0.1,pattern_matrix=pattern_matrix,
 #' Three types of Biclusters can be discovered:
 #' \describe{
 #' \item{Full Pattern: }Bicluster which overlaps completely (within allowed noise levels) with the provided pattern. The column size of this bicluster is always equal to the number of 1's in the pattern.
-#' \item{Sub Pattern: }Biclusters which overlap with a part of the provided pattern within allowed noise levels. Will only be given if \code{subpattern=TRUE} (default).
+#' \item{Sub Pattern: }Biclusters which overlap with a part of the provided pattern within allowed noise levels. Will only be given if \code{subpattern=TRUE} (default). Setting this option to \code{FALSE} decreases computation time.
 #' \item{Extended: }Using the resulting biclusters from the full and sub patterns, other columns will be attempted to be added to the biclusters while keeping the noise as low as possible (the number of rows in the BC stays constant). Naturally the articially added pattern rows will not be taken into account with the noise levels as they are 0 in each other column.
 #' \cr The question which is attempted to be answered here is \emph{`Do the rows, which overlap partly or fully with the given pattern, have other similarities outside the given pattern?`}
 #' } 
@@ -508,7 +521,7 @@ out <- bibit3(matrix=data,minr=2,minc=2,noise=0.1,pattern_matrix=pattern_matrix,
 #' @param arff_row_col Same argument as in \code{\link{bibit}} and \code{\link{bibit2}}. However you can only provide 1 pattern by using this option. For \code{bibit3} to work, the pattern has to be added 2 times on top of the matrix (= identical first 2 rows).
 
 
-#' @return A list object in which each element corresponds with a provided pattern or combination thereof. \cr
+#' @return A S3 list object, \code{`bibit3'} in which each element (apart from the last one) corresponds with a provided pattern or combination thereof. \cr
 #' Each element is a list containing:
 #' \describe{
 #' \item{\code{Number}: }{Number of Initially found BC's by applying BiBit with the provided pattern.} 
@@ -518,7 +531,7 @@ out <- bibit3(matrix=data,minr=2,minc=2,noise=0.1,pattern_matrix=pattern_matrix,
 #' \item{\code{Extended}: }{Biclust S4 Class Object containing the additional Biclusters after extending the biclusters (column wise) of the full and sub patterns}
 #' \item{\code{info}: }{Contains \code{Time_Min} element which includes the elapsed time of parts and the full analysis.}
 #' }
-#' 
+#' The last element in the list is a matrix containing all the investigated patterns.
 #' 
 #' @examples 
 #' \dontrun{
@@ -619,6 +632,7 @@ bibit3 <- function(matrix=NULL,minr=2,minc=2,noise=0,pattern_matrix=NULL,subpatt
   for(i.pattern in 1:nPatterns){
     
     if(i.pattern>1){cat("\n=============================================================================\n\n")}
+    cat(toupper(rownames(pattern_matrix)[i.pattern]),"\n\n")
     
     if(is.null(arff_row_col)){
       time_arff <- round(proc.time()['elapsed']/60,2)
@@ -760,7 +774,17 @@ bibit3 <- function(matrix=NULL,minr=2,minc=2,noise=0,pattern_matrix=NULL,subpatt
     
   }
   
-
+  # DELETE ARTIFICIAL ROWS FROM BC RESULTS
+  
+  for(i.list in 1:length(FINAL_RESULT)){
+    for(j.list in c("FullPattern","SubPattern","Extended")){
+      FINAL_RESULT[[i.list]][[j.list]]@RowxNumber <- FINAL_RESULT[[i.list]][[j.list]]@RowxNumber[-c(1,2),,drop=FALSE]
+    }
+  }
+  
+  # END RESULT
+  FINAL_RESULT$pattern_matrix <- pattern_matrix
+  class(FINAL_RESULT) <- "bibit3"
   return(FINAL_RESULT)
 }
 
@@ -814,10 +838,22 @@ BC_column_extension_pattern <- function(result,data,noise){
     
   }
   
-  result@RowxNumber <- result@RowxNumber[,BC_extended,drop=FALSE]
-  result@NumberxCol <- result@NumberxCol[BC_extended,,drop=FALSE]
-  result@Number <- sum(BC_extended)
-  result@info <- list()
+  if(sum(BC_extended)>=1){
+    result@RowxNumber <- result@RowxNumber[,BC_extended,drop=FALSE]
+    result@NumberxCol <- result@NumberxCol[BC_extended,,drop=FALSE]
+    result@Number <- sum(BC_extended)
+    result@info <- list()
+  }else{
+    nrow.data <- nrow(result@RowxNumber)
+    ncol.data <- ncol(result@NumberxCol)
+    
+    result <- new("Biclust",Parameters=result@Parameters,
+                  RowxNumber=matrix(FALSE,nrow=nrow.data,ncol=1),
+                  NumberxCol=matrix(FALSE,nrow=1,ncol=ncol.data),
+                  Number=0,
+                  info=list()) 
+  }
+
   
   return(result)
 }

@@ -362,4 +362,119 @@ summary.GOFBC <- function(object,...){
 }
 
 
+#' @export
+print.bibit3 <- function(x,...){
+  
+  
+  for(i in 1:(length(x)-1)){
+    cat("\n")
+    cat(toupper(names(x)[i]),"\n")
+    cat(paste0(rep("-",nchar(toupper(names(x)[i]))),collapse=""),"\n\n")
+    
+    patterns <- c("FullPattern","SubPattern","Extended")
+    
+    for(j in 1:length(patterns)){
+      cat(paste0(toupper(patterns[j]),":"),"\n")
+      
+      object <- x[[i]][[patterns[j]]]
+      
+      n<-object@Number
+      
+      if(n>1)
+      {
+        cat("\nNumber of Clusters found: ",object@Number, "\n")
+        cat("\nCluster sizes:\n")
+        
+        rowcolsizes<-rbind(colSums(object@RowxNumber[,1:n]),rowSums(object@NumberxCol[1:n,]))
+        rownames(rowcolsizes)<-c("Number of Rows:","Number of Columns:")
+        colnames(rowcolsizes)<-paste("BC", 1:n)
+        #print.default(format(rowcolsizes, print.gap = 2, quote = FALSE))
+        print(rowcolsizes)
+      }
+      else
+      {
+        if(n==1) cat("\nThere was one cluster found with\n ",sum(object@RowxNumber[,1]), "Rows and ", sum(object@NumberxCol), "columns")
+        if(n==0) cat("\nThere was no cluster found")
+      }
+      cat("\n\n")
+      
+      
+    }
+  }
+  
+}
+
+
+
+#'@export
+summary.bibit3 <- function(object,...){
+  print(x=object)
+}
+
+
+
+#' @title Extract BC from \code{bibit3} result and add pattern
+#' 
+#' @description Function which will print the BC matrix and add 2 duplicate articial pattern rows on top. The function allows you to see the BC and the pattern the BC was guided towards to.
+#' @author Ewoud De Troyer
+#' 
+#' @export
+#' @param result Result produced by \code{\link{bibit3}}
+#' @param matrix The binary input matrix.
+#' @return Prints querried biclusters.
+#' @examples
+#' \dontrun{
+#' # TO DO
+#' }
+bibit3_patternBC <- function(result,matrix,pattern=c(1),type=c("full","sub","ext"),BC=c(1)){
+  
+  if(class(result)!="bibit3"){stop("result is not a `bibit3' S3 object")}
+  
+  # Check if matrix is binary (DISCRETIZED NOT YET IMPLEMENTED!)
+  if(class(matrix)!="matrix"){stop("matrix parameter should contain a matrix object",call.=FALSE)}
+  if(!identical(as.numeric(as.vector(matrix)),as.numeric(as.logical(matrix)))){stop("matrix is not a binary matrix!",call.=FALSE)}
+  
+  if(is.null(rownames(matrix))){rownames(matrix) <- paste0("Row",c(1:nrow(matrix)))}
+  if(is.null(colnames(matrix))){colnames(matrix) <- paste0("Col",c(1:ncol(matrix)))}
+  
+  # Checking other input
+  nPatterns <- nrow(result$pattern_matrix)
+  
+  if(class(pattern)=="character"){
+    if(sum(!(pattern %in% names(result)))>0){stop("One of the patterns is not in the result object")}
+    pattern <- sapply(pattern,FUN=function(x){which(x==names(result))})
+  }
+  if(class(pattern)!="numeric"){stop("pattern should be numeric vector")}
+  if(sum(pattern>nPatterns)>0){stop("One of the patterns is not in the result object")}
+  
+  if(sum(!(type %in% c("full","sub","ext")))>0){stop("type contains wrong input")}
+  type <- sapply(type,FUN=function(x){switch(x,full="FullPattern",sub="SubPattern",ext="Extended")})
+  
+  if(class(BC)!="numeric"){stop("BC should be numeric vector")}
+  
+  # Printing
+  for(i.pattern in pattern){
+    for(i.type in type){
+      for(i.BC in BC){
+        
+        if(i.BC<=result[[i.pattern]][[i.type]]@Number){
+          cat(paste0(toupper(names(result)[i.pattern]," - ",i.type," - BC ",i.BC)))
+          
+          extra_rows <- matrix(rep(result$pattern_matrix[i.pattern,],2),nrow=2,byrow=TRUE,dimnames=list(paste0(names(result)[i.pattern],c("Art1","Art2")),colnames(matrix)))
+          
+          BCprint <- matrix[result[[i.pattern]][[i.type]]@RowxNumber[,i.BC],result[[i.pattern]][[i.type]]@NumberxCol[i.BC,]]
+          
+          print(rbind(extra_rows,BCprint))
+          cat("\n")
+        }
+        
+
+      }
+    }
+    
+  }
+}
+
+
+
 
