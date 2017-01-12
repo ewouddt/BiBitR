@@ -16,7 +16,7 @@ bibit(matrix = NULL, minr = 2, minc = 2, arff_row_col = NULL,
 
 \item{arff_row_col}{If you want to circumvent the internal R function to convert the matrix to \code{.arff} format, provide the pathname of this file here. Additionally, two \code{.csv} files should be provided containing 1 column of row and column names. These two files should not contain a header or quotes around the names, simply 1 column with the names.\cr 
 (\emph{Example}: \code{arff_row_col=c("...\\\\data\\\\matrix.arff","...\\\\data\\\\rownames.csv","...\\\\data\\\\colnames.csv")})\cr
-\emph{Note:} These files can be generated with the \code{make_arff_row_col} function.}
+\emph{Note:} These files can be generated with the \code{\link{make_arff_row_col}} function.}
 
 \item{output_path}{If as output, the original txt output of the Java code is desired, provide the outputh path here (without extension). In this case the \code{bibit} function will skip the transformation to a Biclust class object and simply return \code{NULL}.\cr 
 (\emph{Example}: \code{output_path="...\\\\out\\\\bibitresult"})
