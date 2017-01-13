@@ -1,6 +1,6 @@
 ## IMPORTS ##
 
-#' @importFrom foreign write.arff 
+#' @importFrom foreign write.arff read.arff
 #' @import biclust
 #' @importFrom methods new
 #' @importFrom utils read.table write.table combn
@@ -437,50 +437,6 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
 
 
 
-# Example:
-# set.seed(1)
-# data <- matrix(sample(c(0,1),100*100,replace=TRUE,prob=c(0.9,0.1)),nrow=100,ncol=100)
-# data[1:10,1:10] <- 1 # BC1
-# data[11:20,11:20] <- 1 # BC2
-# data[21:30,21:30] <- 1 # BC3
-# # data <- data[sample(1:nrow(data),nrow(data)),sample(1:ncol(data),ncol(data))]
-# 
-# pattern_matrix <- matrix(0,nrow=3,ncol=100)
-# pattern_matrix[1,1:7] <- 1
-# pattern_matrix[2,11:15] <- 1
-# pattern_matrix[3,13:20] <- 1
-# 
-# 
-# out <- bibit3(matrix=data,minr=2,minc=2,noise=0.1,pattern_matrix=pattern_matrix,subpattern=TRUE,extend_columns=TRUE,pattern_combinations=TRUE,arff_row_col=NULL)
-# out
-# 
-# data[out$Pattern1$FullPattern@RowxNumber[,1],out$Pattern1$FullPattern@NumberxCol[1,]]
-# data[out$Pattern1$Extended@RowxNumber[,1],out$Pattern1$Extended@NumberxCol[1,]]
-# 
-# bibit3_patternBC(result=out,matrix=data,pattern=c(1),type=c("full","sub","ext"),BC=c(1))
-# bibit3_patternBC(result=out,matrix=data,pattern=c(1),type=c("full","sub","ext"),BC=c(1,2))
-# 
-# 
-# data[out$Pattern2$FullPattern@RowxNumber[,1],out$Pattern2$FullPattern@NumberxCol[1,]]
-# data[out$Pattern2$Extended@RowxNumber[,1],out$Pattern2$Extended@NumberxCol[1,]]
-# 
-# data[out[[3]]$FullPattern@RowxNumber[,1],out[[3]]$FullPattern@NumberxCol[1,]]
-# data[out[[3]]$Extended@RowxNumber[,1],out[[3]]$Extended@NumberxCol[1,]]
-
-
-# TO DO:
-# - test function (multiple patterns, combinations, arff)
-# - check if temporary files are getting correct name (_1)
-
-#subpattern=TRUE allows the discovery of sub patterns of given pattern as well as the original pattern completely appearing with extra 0's
-#pattern_matrix contains minimum of 1 row pattern
-# Do found rows in of pattern share more within allowed noise level?
-#arff_row_col only works for 1 pattern (should be double in the top 2 rows!)
-
-
-
-
-
 #' @title The BiBit Algorithm with Noise Allowance guided by Provided Patterns.
 #' 
 #' @description Same function as \code{\link{bibit2}} but only aims to discover biclusters containing the (sub) pattern of provided patterns or their combinations.
@@ -492,16 +448,20 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
 #' \describe{
 #' \item{\emph{Full Pattern: }}{Bicluster which overlaps completely (within allowed noise levels) with the provided pattern. The column size of this bicluster is always equal to the number of 1's in the pattern.}
 #' \item{\emph{Sub Pattern: }}{Biclusters which overlap with a part of the provided pattern within allowed noise levels. Will only be given if \code{subpattern=TRUE} (default). Setting this option to \code{FALSE} decreases computation time.}
-#' \item{\emph{Extended: }}{Using the resulting biclusters from the full and sub patterns, other columns will be attempted to be added to the biclusters while keeping the noise as low as possible (the number of rows in the BC stays constant). Naturally the articially added pattern rows will not be taken into account with the noise levels as they are 0 in each other column.}
-#' \cr The question which is attempted to be answered here is \emph{`Do the rows, which overlap partly or fully with the given pattern, have other similarities outside the given pattern?`}
+#' \item{\emph{Extended: }}{Using the resulting biclusters from the full and sub patterns, other columns will be attempted to be added to the biclusters while keeping the noise as low as possible (the number of rows in the BC stays constant). Naturally the articially added pattern rows will not be taken into account with the noise levels as they are 0 in each other column.
+#' \cr The question which is attempted to be answered here is \emph{`Do the rows, which overlap partly or fully with the given pattern, have other similarities outside the given pattern?`}}
 #' } 
 #' 
 #' \emph{How?}
 #' \cr The BiBit algorithm is applied to a data matrix that contains 2 identical artificial rows at the top which contain the given pattern. 
 #' The default algorithm is then slightly altered to only start from this articial row pair (=Full Pattern) or from 1 artificial row and 1 other row (=Sub Pattern).
 #' 
-#' \emph{Note:}
+#' \emph{Note 1 - Large Data:}
 #' \cr The \code{arff_row_col} can still be provided in case of large data matrices, but the \code{.arff} file should already contain the pattern of interest in the first two rows. Consequently not more than 1 pattern at a time can be investigated with a single call of \code{bibit3}.
+#' 
+#' \emph{Note 2 - Viewing Results:}
+#' \cr A \code{print} and \code{summary} method has been implemented for the output object of \code{bibit3}. It gives an overview of the amount of discovered biclusters and their dimensions
+#' \cr Additionally, the \code{\link{bibit3_patternBC}} function can extract a Bicluster and add the artificial pattern rows to investigate the results.
 #' 
 #' @author Ewoud De Troyer
 #' 
@@ -523,8 +483,6 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
 #' @param extend_columns Boolean value if columns of Biclusters should also be extended for additional results (default=TRUE). See Details Section for more info.
 #' @param pattern_combinations Boolean value if the pairwise combinations of patterns (the intersecting 1's) should also used as starting points (default=FALSE).
 #' @param arff_row_col Same argument as in \code{\link{bibit}} and \code{\link{bibit2}}. However you can only provide 1 pattern by using this option. For \code{bibit3} to work, the pattern has to be added 2 times on top of the matrix (= identical first 2 rows).
-
-
 #' @return A S3 list object, \code{"bibit3"} in which each element (apart from the last one) corresponds with a provided pattern or combination thereof. \cr
 #' Each element is a list containing:
 #' \describe{
@@ -538,8 +496,29 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
 #' The last element in the list is a matrix containing all the investigated patterns.
 #' 
 #' @examples 
-#' \dontrun{
-#' # TO DO
+#' \dontrun{ 
+#' set.seed(1)
+#' data <- matrix(sample(c(0,1),100*100,replace=TRUE,prob=c(0.9,0.1)),nrow=100,ncol=100)
+#' data[1:10,1:10] <- 1 # BC1
+#' data[11:20,11:20] <- 1 # BC2
+#' data[21:30,21:30] <- 1 # BC3
+#' colsel <- sample(1:ncol(data),ncol(data))
+#' data <- data[sample(1:nrow(data),nrow(data)),colsel]
+#' 
+#' pattern_matrix <- matrix(0,nrow=3,ncol=100)
+#' pattern_matrix[1,1:7] <- 1
+#' pattern_matrix[2,11:15] <- 1
+#' pattern_matrix[3,13:20] <- 1
+#' 
+#' pattern_matrix <- pattern_matrix[,colsel]
+#' 
+#' 
+#' out <- bibit3(matrix=data,minr=2,minc=2,noise=0.1,pattern_matrix=pattern_matrix,
+#'               subpattern=TRUE,extend_columns=TRUE,pattern_combinations=TRUE)
+#' out  # OR print(out) OR summary(out)
+#' 
+#' 
+#' bibit3_patternBC(result=out,matrix=data,pattern=c(1),type=c("full","sub","ext"),BC=c(1,2))
 #' }
 bibit3 <- function(matrix=NULL,minr=2,minc=2,noise=0,pattern_matrix=NULL,subpattern=TRUE,extend_columns=TRUE,pattern_combinations=FALSE,arff_row_col=NULL){
   
@@ -608,7 +587,7 @@ bibit3 <- function(matrix=NULL,minr=2,minc=2,noise=0,pattern_matrix=NULL,subpatt
     # Delete zero-rows
     zero_rows <- which(rowSums(pattern_matrix)==0)
     if(length(zero_rows)>0){
-      pattern_matrix <- pattern_matrix[-zero_rows,]
+      pattern_matrix <- pattern_matrix[-zero_rows,,drop=FALSE]
     }
     
     
@@ -661,6 +640,11 @@ bibit3 <- function(matrix=NULL,minr=2,minc=2,noise=0,pattern_matrix=NULL,subpatt
 
       time_arff <- round(proc.time()['elapsed']/60-time_arff,2)
       
+    }else{
+      matrix_with_pattern <- NULL
+      if(extend_columns){
+        matrix_with_pattern <- t(foreign::read.arff(bibitdata_path))
+      }
     }
     
     # Apply BiBit Algorithm
@@ -779,11 +763,30 @@ bibit3 <- function(matrix=NULL,minr=2,minc=2,noise=0,pattern_matrix=NULL,subpatt
     
   }
   
-  # DELETE ARTIFICIAL ROWS FROM BC RESULTS
+  # DELETE ARTIFICIAL ROWS FROM BC RESULTS , if no other rows remain, go to empty result
   
   for(i.list in 1:length(FINAL_RESULT)){
     for(j.list in c("FullPattern","SubPattern","Extended")){
+      
       FINAL_RESULT[[i.list]][[j.list]]@RowxNumber <- FINAL_RESULT[[i.list]][[j.list]]@RowxNumber[-c(1,2),,drop=FALSE]
+      
+      if(FINAL_RESULT[[i.list]][[j.list]]@Number>0){
+        deleteBC_index <- which(colSums(FINAL_RESULT[[i.list]][[j.list]]@RowxNumber)==0)
+        
+        if(length(deleteBC_index)>0){
+          if(length(deleteBC_index)==FINAL_RESULT[[i.list]][[j.list]]@Number){
+            FINAL_RESULT[[i.list]][[j.list]] <- new("Biclust",Parameters=list(Call=pm,Method="BiBit"),
+                                                    RowxNumber=matrix(FALSE,nrow=nrow.data,ncol=1),
+                                                    NumberxCol=matrix(FALSE,nrow=1,ncol=ncol.data),
+                                                    Number=0,
+                                                    info=list())
+          }else{
+            FINAL_RESULT[[i.list]][[j.list]]@RowxNumber <- FINAL_RESULT[[i.list]][[j.list]]@RowxNumber[,-deleteBC_index]
+            FINAL_RESULT[[i.list]][[j.list]]@NumberxCol <- FINAL_RESULT[[i.list]][[j.list]]@NumberxCol[-deleteBC_index,]
+            
+          }
+        }
+      }
     }
   }
   
@@ -796,8 +799,7 @@ bibit3 <- function(matrix=NULL,minr=2,minc=2,noise=0,pattern_matrix=NULL,subpatt
 
 
 
-# zeros_allowed = ceiling(noise * columnsize)
-# Do found rows in of pattern share more within allowed noise level?
+
 BC_column_extension_pattern <- function(result,data,noise){
   
   

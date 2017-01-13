@@ -16,10 +16,10 @@ GOF(matrix, bicresult, alpha = 1, verbose = FALSE)
 \item{verbose}{Boolean value to show a short summary.}
 }
 \value{
-A matrix containing the biclusters in the columns and the row, column and size dimensions on the rows.
+A list containing the scores.
 }
 \description{
-Experimental function, still needs tuning. Will eventually be integrated in bibit2 function.
+\emph{EXPERIMENTAL FUNCTION}, still needs tuning. Will eventually be integrated in bibit2 function.
 }
 \examples{
 \dontrun{

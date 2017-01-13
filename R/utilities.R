@@ -289,7 +289,7 @@ fitness_score <- function(BC,alpha=1){
 
 #' @title Computing Fitness Score of Biclustering Result
 #' 
-#' @description Experimental function, still needs tuning. Will eventually be integrated in bibit2 function. 
+#' @description \emph{EXPERIMENTAL FUNCTION}, still needs tuning. Will eventually be integrated in bibit2 function. 
 #' @author Ewoud De Troyer
 #' 
 #' @export
@@ -297,7 +297,7 @@ fitness_score <- function(BC,alpha=1){
 #' @param bicresult A \code{Biclust} result. (e.g. The return object from \code{bibit} or \code{bibit2})
 #' @param alpha Weighting factor between 0 and 1.
 #' @param verbose Boolean value to show a short summary.
-#' @return A matrix containing the biclusters in the columns and the row, column and size dimensions on the rows.
+#' @return A list containing the scores.
 #' @examples
 #' \dontrun{
 #' data <- matrix(sample(c(0,1),100*100,replace=TRUE,prob=c(0.9,0.1)),nrow=100,ncol=100)
@@ -428,10 +428,31 @@ summary.bibit3 <- function(object,...){
 #' \item Extended (\code{"ext"})
 #' }
 #' @param BC Vector of BC indices which should be printed, conditioned on \code{pattern} and \code{type}.
-#' @return Prints querried biclusters.
+#' @return Prints queried biclusters.
 #' @examples
-#' \dontrun{
-#' # TO DO
+#' \dontrun{ 
+#' set.seed(1)
+#' data <- matrix(sample(c(0,1),100*100,replace=TRUE,prob=c(0.9,0.1)),nrow=100,ncol=100)
+#' data[1:10,1:10] <- 1 # BC1
+#' data[11:20,11:20] <- 1 # BC2
+#' data[21:30,21:30] <- 1 # BC3
+#' colsel <- sample(1:ncol(data),ncol(data))
+#' data <- data[sample(1:nrow(data),nrow(data)),colsel]
+#' 
+#' pattern_matrix <- matrix(0,nrow=3,ncol=100)
+#' pattern_matrix[1,1:7] <- 1
+#' pattern_matrix[2,11:15] <- 1
+#' pattern_matrix[3,13:20] <- 1
+#' 
+#' pattern_matrix <- pattern_matrix[,colsel]
+#' 
+#' 
+#' out <- bibit3(matrix=data,minr=2,minc=2,noise=0.1,pattern_matrix=pattern_matrix,
+#'               subpattern=TRUE,extend_columns=TRUE,pattern_combinations=TRUE)
+#' out  # OR print(out) OR summary(out)
+#' 
+#' 
+#' bibit3_patternBC(result=out,matrix=data,pattern=c(1),type=c("full","sub","ext"),BC=c(1,2))
 #' }
 bibit3_patternBC <- function(result,matrix,pattern=c(1),type=c("full","sub","ext"),BC=c(1)){
   
@@ -475,11 +496,8 @@ bibit3_patternBC <- function(result,matrix,pattern=c(1),type=c("full","sub","ext
           print(rbind(extra_rows[,result[[i.pattern]][[i.type]]@NumberxCol[i.BC,]],BCprint))
           cat("\n\n")
         }
-        
-
       }
     }
-    
   }
 }
 

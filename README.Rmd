@@ -93,7 +93,7 @@ To do this, simply add 2 (artificial) identical rows which contain the pattern/m
 
 After applying BiBit (preferable with noise allowance) on the data with the extra artificial rows, search through all discovered biclusters to find the biclusters which contain the artificial rows, as well as the biclusters which started from the articial row pair. See functions `rows_in_BC` and `rows_full1_in_BC`.
 
-*Future To Do:* Adapt the BiBit algorithm to limit it to only start from the artificial rows.
+**Update:** This procedure is currently implemented in the package in the `bibit3` function. It allows to drive the BiBit algorithm to only look for one or multiple full or sub patterns (which increases the speed). See the Documentation of `bibit3` for more info. 
 
 
 ## Return Value

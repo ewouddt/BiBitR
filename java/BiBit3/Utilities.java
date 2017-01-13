@@ -90,6 +90,8 @@ public class Utilities {
 				{
 					if (matrix_Aux.DAux[j][0]>=minGene) 
 					{
+					  
+					 
 						Integer motifJ=new Integer(j);
 						int andR[]=new int[extraCols];
 						

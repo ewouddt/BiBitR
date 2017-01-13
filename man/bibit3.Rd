@@ -58,20 +58,45 @@ Three types of Biclusters can be discovered:
 \describe{
 \item{\emph{Full Pattern: }}{Bicluster which overlaps completely (within allowed noise levels) with the provided pattern. The column size of this bicluster is always equal to the number of 1's in the pattern.}
 \item{\emph{Sub Pattern: }}{Biclusters which overlap with a part of the provided pattern within allowed noise levels. Will only be given if \code{subpattern=TRUE} (default). Setting this option to \code{FALSE} decreases computation time.}
-\item{\emph{Extended: }}{Using the resulting biclusters from the full and sub patterns, other columns will be attempted to be added to the biclusters while keeping the noise as low as possible (the number of rows in the BC stays constant). Naturally the articially added pattern rows will not be taken into account with the noise levels as they are 0 in each other column.}
-\cr The question which is attempted to be answered here is \emph{`Do the rows, which overlap partly or fully with the given pattern, have other similarities outside the given pattern?`}
+\item{\emph{Extended: }}{Using the resulting biclusters from the full and sub patterns, other columns will be attempted to be added to the biclusters while keeping the noise as low as possible (the number of rows in the BC stays constant). Naturally the articially added pattern rows will not be taken into account with the noise levels as they are 0 in each other column.
+\cr The question which is attempted to be answered here is \emph{`Do the rows, which overlap partly or fully with the given pattern, have other similarities outside the given pattern?`}}
 } 
 
 \emph{How?}
 \cr The BiBit algorithm is applied to a data matrix that contains 2 identical artificial rows at the top which contain the given pattern. 
 The default algorithm is then slightly altered to only start from this articial row pair (=Full Pattern) or from 1 artificial row and 1 other row (=Sub Pattern).
 
-\emph{Note:}
+\emph{Note 1 - Large Data:}
 \cr The \code{arff_row_col} can still be provided in case of large data matrices, but the \code{.arff} file should already contain the pattern of interest in the first two rows. Consequently not more than 1 pattern at a time can be investigated with a single call of \code{bibit3}.
+
+\emph{Note 2 - Viewing Results:}
+\cr A \code{print} and \code{summary} method has been implemented for the output object of \code{bibit3}. It gives an overview of the amount of discovered biclusters and their dimensions
+\cr Additionally, the \code{\link{bibit3_patternBC}} function can extract a Bicluster and add the artificial pattern rows to investigate the results.
 }
 \examples{
-\dontrun{
-# TO DO
+\dontrun{ 
+set.seed(1)
+data <- matrix(sample(c(0,1),100*100,replace=TRUE,prob=c(0.9,0.1)),nrow=100,ncol=100)
+data[1:10,1:10] <- 1 # BC1
+data[11:20,11:20] <- 1 # BC2
+data[21:30,21:30] <- 1 # BC3
+colsel <- sample(1:ncol(data),ncol(data))
+data <- data[sample(1:nrow(data),nrow(data)),colsel]
+
+pattern_matrix <- matrix(0,nrow=3,ncol=100)
+pattern_matrix[1,1:7] <- 1
+pattern_matrix[2,11:15] <- 1
+pattern_matrix[3,13:20] <- 1
+
+pattern_matrix <- pattern_matrix[,colsel]
+
+
+out <- bibit3(matrix=data,minr=2,minc=2,noise=0.1,pattern_matrix=pattern_matrix,
+              subpattern=TRUE,extend_columns=TRUE,pattern_combinations=TRUE)
+out  # OR print(out) OR summary(out)
+
+
+bibit3_patternBC(result=out,matrix=data,pattern=c(1),type=c("full","sub","ext"),BC=c(1,2))
 }
 }
 \author{

@@ -24,14 +24,35 @@ bibit3_patternBC(result, matrix, pattern = c(1), type = c("full", "sub",
 \item{BC}{Vector of BC indices which should be printed, conditioned on \code{pattern} and \code{type}.}
 }
 \value{
-Prints querried biclusters.
+Prints queried biclusters.
 }
 \description{
 Function which will print the BC matrix and add 2 duplicate articial pattern rows on top. The function allows you to see the BC and the pattern the BC was guided towards to.
 }
 \examples{
-\dontrun{
-# TO DO
+\dontrun{ 
+set.seed(1)
+data <- matrix(sample(c(0,1),100*100,replace=TRUE,prob=c(0.9,0.1)),nrow=100,ncol=100)
+data[1:10,1:10] <- 1 # BC1
+data[11:20,11:20] <- 1 # BC2
+data[21:30,21:30] <- 1 # BC3
+colsel <- sample(1:ncol(data),ncol(data))
+data <- data[sample(1:nrow(data),nrow(data)),colsel]
+
+pattern_matrix <- matrix(0,nrow=3,ncol=100)
+pattern_matrix[1,1:7] <- 1
+pattern_matrix[2,11:15] <- 1
+pattern_matrix[3,13:20] <- 1
+
+pattern_matrix <- pattern_matrix[,colsel]
+
+
+out <- bibit3(matrix=data,minr=2,minc=2,noise=0.1,pattern_matrix=pattern_matrix,
+              subpattern=TRUE,extend_columns=TRUE,pattern_combinations=TRUE)
+out  # OR print(out) OR summary(out)
+
+
+bibit3_patternBC(result=out,matrix=data,pattern=c(1),type=c("full","sub","ext"),BC=c(1,2))
 }
 }
 \author{
