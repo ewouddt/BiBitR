@@ -48,6 +48,7 @@ data[21:30,21:30] <- 1 # BC3
 data <- data[sample(1:nrow(data),nrow(data)),sample(1:ncol(data),ncol(data))]
 result <- bibit(data,minr=5,minc=5)
 result
+MaxBC(result)
 }
 }
 \author{

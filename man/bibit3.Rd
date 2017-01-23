@@ -4,14 +4,14 @@
 \alias{bibit3}
 \title{The BiBit Algorithm with Noise Allowance guided by Provided Patterns.}
 \usage{
-bibit3(matrix = NULL, minr = 2, minc = 2, noise = 0,
+bibit3(matrix = NULL, minr = 1, minc = 2, noise = 0,
   pattern_matrix = NULL, subpattern = TRUE, extend_columns = TRUE,
   pattern_combinations = FALSE, arff_row_col = NULL)
 }
 \arguments{
 \item{matrix}{The binary input matrix.}
 
-\item{minr}{The minimum number of rows of the Biclusters.}
+\item{minr}{The minimum number of rows of the Biclusters. (Note that in contrast to \code{\link{bibit}} and \code{\link{bibit2}}, this can be be set to 1 since we are looking for additional rows to the provided pattern.)}
 
 \item{minc}{The minimum number of columns of the Biclusters.}
 

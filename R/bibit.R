@@ -47,6 +47,7 @@ NULL
 #' data <- data[sample(1:nrow(data),nrow(data)),sample(1:ncol(data),ncol(data))]
 #' result <- bibit(data,minr=5,minc=5)
 #' result
+#' MaxBC(result)
 #' }
 bibit <- function(matrix=NULL,minr=2,minc=2,arff_row_col=NULL,output_path=NULL){
   
@@ -286,6 +287,8 @@ bibit2biclust <- function(data,resultpath,arff_row_col){
 #' (\emph{Example}: \code{output_path="...\\\\out\\\\bibitresult"})
 #' \cr
 #' (\emph{Description Output}: The following information about every bicluster generated will be printed in the output file: number of rows, number of columns, name of rows and name of columns.
+#' @param extend_columns (EXPERIMENTAL!) Boolean value which applies a column extension procedure to the result of the BiBit algorithm. Columns will be sequentially added, keeping the noise beneath the allowed level. The procedure is the same as in \code{\link{bibit3}}, but now no artificial rows have to be ignored in the noise levels. 
+#' \cr Note: The \code{@info} slot will also contain a \code{BC.Extended} value which contains the indices of which Biclusters's columns were extended.
 #' @return A Biclust S4 Class object.
 #' 
 #' @examples 
@@ -298,10 +301,13 @@ bibit2biclust <- function(data,resultpath,arff_row_col){
 #' 
 #' result1 <- bibit2(data,minr=5,minc=5,noise=0.2)
 #' result1
+#' MaxBC(result1,top=1)
+#' 
 #' result2 <- bibit2(data,minr=5,minc=5,noise=3)
 #' result2
+#' MaxBC(result2,top=2)
 #' }
-bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_path=NULL){
+bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_path=NULL,extend_columns=FALSE){
   
   pm <- match.call()
   
@@ -406,6 +412,11 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
                      Number=result$Number,
                      info=list(Time_Min=list(arff=time_arff,bibit=time_bibit,biclust=time_biclust,full=time_arff+time_bibit+time_biclust)))
       
+      if(extend_columns){
+        result2 <- BC_column_extension(result=result2,data=matrix,noise=noise)
+      }
+      
+      
     }else{
       
       if(!is.null(arff_row_col)){
@@ -469,7 +480,7 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
 #' 
 #' @export
 #' @param matrix The binary input matrix.
-#' @param minr The minimum number of rows of the Biclusters.
+#' @param minr The minimum number of rows of the Biclusters. (Note that in contrast to \code{\link{bibit}} and \code{\link{bibit2}}, this can be be set to 1 since we are looking for additional rows to the provided pattern.)
 #' @param minc The minimum number of columns of the Biclusters.
 #' @param noise Noise parameter which determines the amount of zero's allowed in the bicluster (i.e. in the extra added rows to the starting row pair).
 #' \itemize{
@@ -520,10 +531,10 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
 #' 
 #' bibit3_patternBC(result=out,matrix=data,pattern=c(1),type=c("full","sub","ext"),BC=c(1,2))
 #' }
-bibit3 <- function(matrix=NULL,minr=2,minc=2,noise=0,pattern_matrix=NULL,subpattern=TRUE,extend_columns=TRUE,pattern_combinations=FALSE,arff_row_col=NULL){
+bibit3 <- function(matrix=NULL,minr=1,minc=2,noise=0,pattern_matrix=NULL,subpattern=TRUE,extend_columns=TRUE,pattern_combinations=FALSE,arff_row_col=NULL){
   
   pm <- match.call()
-
+  minr <- minr + 2
   
   ###
   if(noise<0){stop("noise parameter can not be negative",call.=FALSE)}
@@ -867,5 +878,62 @@ BC_column_extension_pattern <- function(result,data,noise){
 
 
 
+BC_column_extension <- function(result,data,noise){
+  
+  time_extend <- round(proc.time()['elapsed']/60,2)
+  
+  
+  BC_extended <- rep(FALSE,result@Number)
+  
+  for(i.BC in 1:result@Number){
+    included_columns <- result@NumberxCol[i.BC,]
+    
+    column_candidates <- order(colSums(data[result@RowxNumber[,i.BC],]),decreasing=TRUE)
+    
+    GO <- TRUE
+    i.candidate <- 1
+    
+    
+    while(GO & (i.candidate<=length(column_candidates))){
+      
+      if(!included_columns[column_candidates[i.candidate]]){
+        
+        included_columns_temp <- included_columns
+        included_columns_temp[column_candidates[i.candidate]] <- TRUE
+        
+        zeros_allowed <- ifelse(((noise<1)&(noise>0)),ceiling(noise*sum(included_columns_temp)),noise)
+        
+        zeros_in_rows <- apply(data[result@RowxNumber[,i.BC],included_columns_temp],MARGIN=1,FUN=function(x){sum(x==0)})
+        
+        if(all(zeros_in_rows<=zeros_allowed)){
+          
+          included_columns <- included_columns_temp
+          i.candidate <- i.candidate+1
+          
+          
+        }else{
+          GO <- FALSE
+        }
+      }else{
+        i.candidate <- i.candidate+1
+      }
+      
+    }
+    
+    if(sum(included_columns)>sum(result@NumberxCol[i.BC,])){BC_extended[i.BC] <- TRUE}
+    result@NumberxCol[i.BC,] <- included_columns
+    
+  }
+  time_extend <- round(proc.time()['elapsed']/60-time_extend,2)
+  
+  result@info$Time_Min$extend <- time_extend
+  result@info$Time_Min$full <- result@info$Time_Min$full + time_extend
+  result@info$BC.Extended <- which(BC_extended)
+  
+  # info=list(Time_Min=list(arff=time_arff,bibit=time_bibit,biclust=time_biclust,full=time_arff+time_bibit+time_biclust)))
+
+  
+  return(result)
+}
 
 

@@ -5,7 +5,7 @@
 \title{The BiBit Algorithm with Noise Allowance}
 \usage{
 bibit2(matrix = NULL, minr = 2, minc = 2, noise = 0,
-  arff_row_col = NULL, output_path = NULL)
+  arff_row_col = NULL, output_path = NULL, extend_columns = FALSE)
 }
 \arguments{
 \item{matrix}{The binary input matrix.}
@@ -30,6 +30,9 @@ More specifically \code{zeros_allowed = ceiling(noise * columnsize)}. For exampl
 (\emph{Example}: \code{output_path="...\\\\out\\\\bibitresult"})
 \cr
 (\emph{Description Output}: The following information about every bicluster generated will be printed in the output file: number of rows, number of columns, name of rows and name of columns.}
+
+\item{extend_columns}{(EXPERIMENTAL!) Boolean value which applies a column extension procedure to the result of the BiBit algorithm. Columns will be sequentially added, keeping the noise beneath the allowed level. The procedure is the same as in \code{\link{bibit3}}, but now no artificial rows have to be ignored in the noise levels. 
+\cr Note: The \code{@info} slot will also contain a \code{BC.Extended} value which contains the indices of which Biclusters's columns were extended.}
 }
 \value{
 A Biclust S4 Class object.
@@ -63,8 +66,11 @@ data <- data[sample(1:nrow(data),nrow(data)),sample(1:ncol(data),ncol(data))]
 
 result1 <- bibit2(data,minr=5,minc=5,noise=0.2)
 result1
+MaxBC(result1,top=1)
+
 result2 <- bibit2(data,minr=5,minc=5,noise=3)
 result2
+MaxBC(result2,top=2)
 }
 }
 \author{
