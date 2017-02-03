@@ -123,7 +123,7 @@ bibit <- function(matrix=NULL,minr=2,minc=2,arff_row_col=NULL,output_path=NULL){
   
   time_bibit <- proc.time()['elapsed']/60
   
-  javaloc <- paste0(.libPaths(),"/BiBitR/java/BiBit.jar")
+  javaloc <- paste0(.libPaths()[1],"/BiBitR/java/BiBit.jar")
   # javaloc <- gsub("/","\\\\",javaloc)
   
   # BiBit.jar location needs to be standardized for package location! # .libPaths()
@@ -384,7 +384,7 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
   
   time_bibit <- proc.time()['elapsed']/60
   
-  javaloc <- paste0(.libPaths(),"/BiBitR/java/BiBit2.jar")
+  javaloc <- paste0(.libPaths()[1],"/BiBitR/java/BiBit2.jar")
   # javaloc <- gsub("/","\\\\",javaloc)
   
   # BiBit.jar location needs to be standardized for package location! # .libPaths()
@@ -668,7 +668,7 @@ bibit3 <- function(matrix=NULL,minr=1,minc=2,noise=0,pattern_matrix=NULL,subpatt
     
     time_bibit <- proc.time()['elapsed']/60
     
-    javaloc <- paste0(.libPaths(),"/BiBitR/java/BiBit3.jar")
+    javaloc <- paste0(.libPaths()[1],"/BiBitR/java/BiBit3.jar")
     # javaloc <- paste0(getwd(),"/inst/java/BiBit3.jar")
     
     subpat <- ifelse(subpattern,1,0)
