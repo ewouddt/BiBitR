@@ -152,6 +152,9 @@ make_arff_row_col <- function(matrix,name="data",path=""){
     warning(paste0("Column names ",paste0(which(colsc),collapse = ",")," contained a ';' which was deleted."),call.=FALSE)
   }
   
+  # No duplicate row names allowed!
+  if(sum(table(rownames(matrix))>1)){stop("No duplicate row names allowed!")}
+  
   write.arff(t(matrix),file=paste0(getwd(),"/",path,"/",name,"_arff.arff"))
   write.table(matrix(rownames(matrix),ncol=1),quote=FALSE,row.names=FALSE,col.names=FALSE,file=paste0(getwd(),"/",path,"/",name,"_rownames.csv"))
   write.table(matrix(colnames(matrix),ncol=1),quote=FALSE,row.names=FALSE,col.names=FALSE,file=paste0(getwd(),"/",path,"/",name,"_colnames.csv"))

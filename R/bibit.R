@@ -86,6 +86,8 @@ bibit <- function(matrix=NULL,minr=2,minc=2,arff_row_col=NULL,output_path=NULL){
       warning(paste0("Column names ",paste0(which(colsc),collapse = ",")," contained a ';' which was deleted."),call.=FALSE)
     }
     
+    # No duplicate row names allowed!
+    if(sum(table(rownames(matrix))>1)){stop("No duplicate row names allowed!")}
     
     # Transform data into arff format
     cat("Transform matrix into arff format...")
@@ -348,6 +350,8 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
       warning(paste0("Column names ",paste0(which(colsc),collapse = ",")," contained a ';' which was deleted."),call.=FALSE)
     }
     
+    # No duplicate row names allowed!
+    if(sum(table(rownames(matrix))>1)){stop("No duplicate row names allowed!")}
     
     # Transform data into arff format
     cat("Transform matrix into arff format...")
@@ -572,6 +576,9 @@ bibit3 <- function(matrix=NULL,minr=1,minc=2,noise=0,pattern_matrix=NULL,subpatt
       colnames(matrix) <- gsub(";","",colnames(matrix))
       warning(paste0("Column names ",paste0(which(colsc),collapse = ",")," contained a ';' which was deleted."),call.=FALSE)
     }
+    
+    # No duplicate row names allowed!
+    if(sum(table(rownames(matrix))>1)){stop("No duplicate row names allowed!")}
     
     # Check pattern matrix
     if(is.null(pattern_matrix)){stop("pattern_matrix needs to be provided",call.=FALSE)}
