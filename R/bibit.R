@@ -291,7 +291,7 @@ bibit2biclust <- function(data,resultpath,arff_row_col){
 #' \cr
 #' (\emph{Description Output}: The following information about every bicluster generated will be printed in the output file: number of rows, number of columns, name of rows and name of columns.
 #' @param extend_columns (EXPERIMENTAL!) Boolean value which applies a column extension procedure to the result of the BiBit algorithm. Columns will be sequentially added, keeping the noise beneath the allowed level. The procedure is the same as in \code{\link{bibit3}}, but now no artificial rows have to be ignored in the noise levels. 
-#' \cr Note: The \code{@info} slot will also contain a \code{BC.Extended} value which contains the indices of which Biclusters's columns were extended.
+#' \cr Note: The \code{@info} slot will also contain: a \code{BC.Extended} value which contains the indices of which Biclusters's columns were extended, and a \code{BC.Duplicates} matrix in which BC's are checked pairwise if they are duplicates after extending the columns.
 #' @return A Biclust S4 Class object.
 #' 
 #' @examples 
@@ -420,6 +420,24 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
       
       if(extend_columns){
         result2 <- BC_column_extension(result=result2,data=matrix,noise=noise)
+        
+        # Delete duplicate BC's if necessary and save info which were duplicate
+        if(result2@Number>1){
+          JI_mat <- matrix(NA,nrow=result2@Number,ncol=result2@Number)
+          for(i.JI in 2:nrow(JI_mat)){
+            for(j.JI in 1:(i.JI-1)){
+             JI_mat[i.JI,j.JI] <-  jaccard_bc(result2,i.JI,j.JI)
+            }
+          }
+          JI_duplicate <- which(JI_mat==1,arr.ind=TRUE)
+          if(nrow(JI_duplicate)>0){
+            result2@info$BC.Duplicates <- matrix(paste0("BC",JI_duplicate),nrow=nrow(JI_duplicate),ncol=ncol(JI_duplicate),dimnames=list(paste0("Dup",1:nrow(JI_duplicate)),NULL))
+          }else{
+            result2@info$BC.Duplicates <- NULL
+          }
+          
+        }
+        
       }
       
       
@@ -466,7 +484,16 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
 #' \item{\emph{Full Pattern: }}{Bicluster which overlaps completely (within allowed noise levels) with the provided pattern. The column size of this bicluster is always equal to the number of 1's in the pattern.}
 #' \item{\emph{Sub Pattern: }}{Biclusters which overlap with a part of the provided pattern within allowed noise levels. Will only be given if \code{subpattern=TRUE} (default). Setting this option to \code{FALSE} decreases computation time.}
 #' \item{\emph{Extended: }}{Using the resulting biclusters from the full and sub patterns, other columns will be attempted to be added to the biclusters while keeping the noise as low as possible (the number of rows in the BC stays constant). Naturally the articially added pattern rows will not be taken into account with the noise levels as they are 0 in each other column.
-#' \cr The question which is attempted to be answered here is \emph{`Do the rows, which overlap partly or fully with the given pattern, have other similarities outside the given pattern?`}}
+#' \cr The question which is attempted to be answered here is \emph{`Do the rows, which overlap partly or fully with the given pattern, have other similarities outside the given pattern?`}
+#' \cr\cr\strong{Disclaimer:} Currently naively implemented by going through column candidates based on most 1's in a column.
+#' \cr This has 2 major consequences:
+#' \itemize{
+#' \item{If 2 columns are identical, the first in the dataset is added, while the second isn't (depending on the noise level allowed per row).}
+#' \item{If 2 non-identical columns are viable to be added (correct row noise), the column with the most 1's is added. Afterwards the second column might not be viable anymore.}
+#' }
+#' Future planned implementation will attempt to resolve this.
+#' 
+#' }
 #' } 
 #' 
 #' \emph{How?}

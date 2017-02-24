@@ -516,4 +516,21 @@ bibit3_patternBC <- function(result,matrix,pattern=c(1),type=c("full","sub","ext
 
 
 
+jaccard_bc <- function(result,BC1,BC2){
+  
+  combine.m <- result1.m <- result2.m <- matrix(0,nrow=dim(result@RowxNumber)[1],ncol=dim(result@NumberxCol)[2])
+  result1.m[result@RowxNumber[,BC1],result@NumberxCol[BC1,]] <- 1
+  combine.m[result@RowxNumber[,BC1],result@NumberxCol[BC1,]] <- 1
+  
+  result2.m[result@RowxNumber[,BC2],result@NumberxCol[BC2,]] <- 1
+  combine.m[result@RowxNumber[,BC2],result@NumberxCol[BC2,]] <- 1
+  
+  m1 <- sum(result1.m)
+  m2 <- sum(result2.m)
+  m12 <- sum(combine.m)
+  
+  JI <- (m1+m2-(m12))/(m12)
+  
+  return(JI)
+}
 

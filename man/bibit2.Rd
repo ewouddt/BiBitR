@@ -32,7 +32,7 @@ More specifically \code{zeros_allowed = ceiling(noise * columnsize)}. For exampl
 (\emph{Description Output}: The following information about every bicluster generated will be printed in the output file: number of rows, number of columns, name of rows and name of columns.}
 
 \item{extend_columns}{(EXPERIMENTAL!) Boolean value which applies a column extension procedure to the result of the BiBit algorithm. Columns will be sequentially added, keeping the noise beneath the allowed level. The procedure is the same as in \code{\link{bibit3}}, but now no artificial rows have to be ignored in the noise levels. 
-\cr Note: The \code{@info} slot will also contain a \code{BC.Extended} value which contains the indices of which Biclusters's columns were extended.}
+\cr Note: The \code{@info} slot will also contain: a \code{BC.Extended} value which contains the indices of which Biclusters's columns were extended, and a \code{BC.Duplicates} matrix in which BC's are checked pairwise if they are duplicates after extending the columns.}
 }
 \value{
 A Biclust S4 Class object.
