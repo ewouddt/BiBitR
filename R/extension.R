@@ -22,6 +22,9 @@
 check_candidates <- function(data,included,candidates,noise){
   
   if(length(candidates)>0){
+    
+    noise <- ifelse(((noise<1)&(noise>0)),ceiling(noise*(length(included)+1)),noise)
+    
     noise_in_rows <- ncol(data[,included,drop=FALSE])-rowSums(data[,included,drop=FALSE])
     
     rows_noise_allowed <- which((noise - noise_in_rows)>0)

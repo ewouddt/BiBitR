@@ -5,7 +5,8 @@
 \title{The BiBit Algorithm with Noise Allowance}
 \usage{
 bibit2(matrix = NULL, minr = 2, minc = 2, noise = 0,
-  arff_row_col = NULL, output_path = NULL, extend_columns = FALSE)
+  arff_row_col = NULL, output_path = NULL, extend_columns = "none",
+  extend_mincol = 1, extend_limitcol = 1, extend_noise = noise)
 }
 \arguments{
 \item{matrix}{The binary input matrix.}
@@ -31,8 +32,16 @@ More specifically \code{zeros_allowed = ceiling(noise * columnsize)}. For exampl
 \cr
 (\emph{Description Output}: The following information about every bicluster generated will be printed in the output file: number of rows, number of columns, name of rows and name of columns.}
 
-\item{extend_columns}{(EXPERIMENTAL!) Boolean value which applies a column extension procedure to the result of the BiBit algorithm. Columns will be sequentially added, keeping the noise beneath the allowed level. The procedure is the same as in \code{\link{bibit3}}, but now no artificial rows have to be ignored in the noise levels. 
-\cr Note: The \code{@info} slot will also contain: a \code{BC.Extended} value which contains the indices of which Biclusters's columns were extended, and a \code{BC.Duplicates} matrix in which BC's are checked pairwise if they are duplicates after extending the columns.}
+\item{extend_columns}{\emph{Column Extension Parameter} Can be one of the following: \code{"none"}, \code{"naive"}, \code{"recursive"} which will apply either a naive or recursive column extension procedure. (See Details Section for more information.)
+\cr Based on the extension, additional biclusters will be created in the Biclust object which can be seen in the column and row names of the \code{RowxNumber} and \code{NumberxCol} slots (\code{"_Ext"} suffix).
+\cr The \code{info} slot will also contain some additional information. Inside this slot, \code{BC.Extended} contains info on which original biclusters were extended, how many columns were added, and in how many extra extended biclusters this resulted.
+\code{BC.Duplicates} contains a matrix in which BC's are checked pairwise if they are duplicates after extending the columns.}
+
+\item{extend_mincol}{\emph{Column Extension Parameter} A minimum number of columns that a bicluster should be able to be extended with before saving the result. (Default=1)}
+
+\item{extend_limitcol}{\emph{Column Extension Parameter} The number (\code{extend_limitcol>=1}) or percentage (\code{0<extend_limitcol<1}) of 1's that a column (subsetted on the BC rows) should at least contain for it to be a candidate to be added to the bicluster as an extension. (Default=1) (Increase this parameter if the recursive extension takes too long. Limiting the pool of candidates will decrease computation time, but restrict the results more.)}
+
+\item{extend_noise}{\emph{Column Extension Parameter} The maximum allowed noise (in each row) when extending the columns of the bicluster. Can take the same as the \code{noise} parameter. By default this is the same value as \code{noise}.}
 }
 \value{
 A Biclust S4 Class object.
@@ -40,7 +49,8 @@ A Biclust S4 Class object.
 \description{
 Same function as \code{\link{bibit}} with an additional new noise parameter which allows 0's in the discovered biclusters (See Details for more info).
 }
-\details{
+\section{Details - General}{
+ 
 \code{bibit2} follows the same steps as described in the Details section of \code{\link{bibit}}.\cr
 Following the general steps of the BiBit algorithm, the allowance for noise in the biclusters is inserted in the original algorithm as such:
 \enumerate{
@@ -55,6 +65,30 @@ Following the general steps of the BiBit algorithm, the allowance for noise in t
 What you will end up with are biclusters not only consisting out of 1's, but biclusters in which 2 rows (the starting pair) are all 1's and in which the other rows could contain 0's (= noise).\cr
 \cr
 \emph{Note:} Because of the extra checks involved in the noise allowance, using noise might increase the computation time a little bit.
+}
+
+\section{Details - Column Extension}{
+
+An optional procedure which can be applied \emph{after} applying the BiBit algorithm (with noise) is called \emph{Column Extension}. 
+The procedure will add extra columns to a BiBit bicluster, keeping into account the allowed \code{extend_noise} level in each row.
+The primary goal is to, after applying BiBit with noise, to also try and add some noise to the 2 initial `perfect` rows.
+Other parameters like \code{extend_mincol} and \code{extend_limitcol} can also further restrict which extensions should be discovered.
+\cr This procedure can be done either \emph{naively} (fast) or \emph{recursively} (more slow and thorough) with the \code{extend_columns} parameter.
+
+\describe{
+\item{\code{"naive"}}{Subsetting on the bicluster rows, the column candidates are ordered based on the most 1's in a column. Afterwards, in this order, each column is sequentially checked and added when the resulted BC is still within row noise levels.
+\cr This has 2 major consequences:
+\itemize{
+\item{If 2 columns are identical, the first in the dataset is added, while the second isn't (depending on the noise level allowed per row).}
+\item{If 2 non-identical columns are viable to be added (correct row noise), the column with the most 1's is added. Afterwards the second column might not be viable anymore.}
+}
+Note that using this method will always result in a maximum of 1 extended bicluster per original bicluster.
+}
+\item{\code{"recursive"}}{
+Conditioning the group of candidates for the allowed row noise level, each possible/allowed combination of adding columns to the bicluster is checked. Only the resulted biclusters with the highest number of extra columns are saved.
+Of course this could result in multiple extensions for 1 bicluster if there are multiple `maximum added columns` results.
+}
+}
 }
 \examples{
 \dontrun{

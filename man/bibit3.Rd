@@ -58,16 +58,10 @@ Three types of Biclusters can be discovered:
 \describe{
 \item{\emph{Full Pattern: }}{Bicluster which overlaps completely (within allowed noise levels) with the provided pattern. The column size of this bicluster is always equal to the number of 1's in the pattern.}
 \item{\emph{Sub Pattern: }}{Biclusters which overlap with a part of the provided pattern within allowed noise levels. Will only be given if \code{subpattern=TRUE} (default). Setting this option to \code{FALSE} decreases computation time.}
-\item{\emph{Extended: }}{Using the resulting biclusters from the full and sub patterns, other columns will be attempted to be added to the biclusters while keeping the noise as low as possible (the number of rows in the BC stays constant). Naturally the articially added pattern rows will not be taken into account with the noise levels as they are 0 in each other column.
+\item{\emph{Extended: }}{Using the resulting biclusters from the full and sub patterns, other columns will be attempted to be added to the biclusters while keeping the noise as low as possible (the number of rows in the BC stays constant). 
+This can be done either with \code{extend_columns} equal to \code{"naive"} or \code{"recursive"}. More info on the difference can be found in the Details Section of \code{\link{bibit2}}.
+\cr Naturally the articially added pattern rows will not be taken into account with the noise levels as they are 0 in each other column.
 \cr The question which is attempted to be answered here is \emph{`Do the rows, which overlap partly or fully with the given pattern, have other similarities outside the given pattern?`}
-\cr\cr\strong{Disclaimer:} Currently naively implemented by going through column candidates based on most 1's in a column.
-\cr This has 2 major consequences:
-\itemize{
-\item{If 2 columns are identical, the first in the dataset is added, while the second isn't (depending on the noise level allowed per row).}
-\item{If 2 non-identical columns are viable to be added (correct row noise), the column with the most 1's is added. Afterwards the second column might not be viable anymore.}
-}
-Future planned implementation will attempt to resolve this.
-
 }
 } 
 

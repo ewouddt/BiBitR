@@ -3,16 +3,10 @@
 
 # TO DO: 
 # - add recursive
-# - Change BC info output of naive so it's the same as for recursive
-# - change naming of naive so it's the same as fo recursive
-# - also add original BC's in naive procedure
 # - also include recursive in pattern bibit
-# - optional: set different starting noise for extension procedure
-# - add lower_limit to naive too
-# - add mininmal columns needed to extend (TO DO: easy: startlength+X)
 # - make separate extension function which accepts bibit2 and bibit3 output (Deletes old extentions and overwrites)
 # - change BiclustGUI so bibit2 had extension + change bibit3 so it has wright input again (no EXTEND=TRUE anymore, but "none", "naive", "recursive")
-
+# - add message of number of extensions or when no extensions
 
 
 
@@ -301,12 +295,12 @@ bibit2biclust <- function(data,resultpath,arff_row_col){
 #' @section Details - Column Extension:
 #' An optional procedure which can be applied \emph{after} applying the BiBit algorithm (with noise) is called \emph{Column Extension}. 
 #' The procedure will add extra columns to a BiBit bicluster, keeping into account the allowed \code{extend_noise} level in each row.
-#' The primary goal is to, after applying BiBit with noise, to also try and add some noise to 2 initial `perfect` rows.
-#' Other parameters like \code{extend_mincol}and \code{extend_limitcol} can also further restrict which extensions should be discovered.
+#' The primary goal is to, after applying BiBit with noise, to also try and add some noise to the 2 initial `perfect` rows.
+#' Other parameters like \code{extend_mincol} and \code{extend_limitcol} can also further restrict which extensions should be discovered.
 #' \cr This procedure can be done either \emph{naively} (fast) or \emph{recursively} (more slow and thorough) with the \code{extend_columns} parameter.
 #' 
 #' \describe{
-#' \item{\code{"naive"}}{Subsetting on the bicluster rows, the column candidates are ordered based on the most 1's in a column. Afterwards, in this order, each column is sequentially checked and added if the resulted BC is still within row noise levels.
+#' \item{\code{"naive"}}{Subsetting on the bicluster rows, the column candidates are ordered based on the most 1's in a column. Afterwards, in this order, each column is sequentially checked and added when the resulted BC is still within row noise levels.
 #' \cr This has 2 major consequences:
 #' \itemize{
 #' \item{If 2 columns are identical, the first in the dataset is added, while the second isn't (depending on the noise level allowed per row).}
@@ -315,7 +309,7 @@ bibit2biclust <- function(data,resultpath,arff_row_col){
 #' Note that using this method will always result in a maximum of 1 extended bicluster per original bicluster.
 #' }
 #' \item{\code{"recursive"}}{
-#' Conditioning the group of candidates on the allowed row noise level, each possible/allowed combination of adding columns to the bicluster is checked. Only the resulted biclusters with the highest number of extra columns are saved.
+#' Conditioning the group of candidates for the allowed row noise level, each possible/allowed combination of adding columns to the bicluster is checked. Only the resulted biclusters with the highest number of extra columns are saved.
 #' Of course this could result in multiple extensions for 1 bicluster if there are multiple `maximum added columns` results.
 #' }
 #' }
@@ -350,9 +344,9 @@ bibit2biclust <- function(data,resultpath,arff_row_col){
 #' \cr The \code{info} slot will also contain some additional information. Inside this slot, \code{BC.Extended} contains info on which original biclusters were extended, how many columns were added, and in how many extra extended biclusters this resulted.
 #' \code{BC.Duplicates} contains a matrix in which BC's are checked pairwise if they are duplicates after extending the columns.
 #' @param extend_mincol \emph{Column Extension Parameter} A minimum number of columns that a bicluster should be able to be extended with before saving the result. (Default=1)
-#' @param extend_limitcol \emph{Column Extension Parameter} The number (\code{extend_limitcol>=1}) or percentage (\code{0<extend_limitcol<1}) of 1's that a column (subsetted on the BC rows) should contain at least for it to be a candidate to be added to the bicluster as an extension. (Default=1)
+#' @param extend_limitcol \emph{Column Extension Parameter} The number (\code{extend_limitcol>=1}) or percentage (\code{0<extend_limitcol<1}) of 1's that a column (subsetted on the BC rows) should at least contain for it to be a candidate to be added to the bicluster as an extension. (Default=1) (Increase this parameter if the recursive extension takes too long. Limiting the pool of candidates will decrease computation time, but restrict the results more.)
 #' 
-#' @param extend_noise \emph{Column Extension Parameter} The maximum allowed noise (in each row) when extending the columns of the bicluster. Can take the same values as the \code{noise} parameter. By default this takes the same value as \code{noise}.
+#' @param extend_noise \emph{Column Extension Parameter} The maximum allowed noise (in each row) when extending the columns of the bicluster. Can take the same as the \code{noise} parameter. By default this is the same value as \code{noise}.
 #' 
 #' 
 #' 
