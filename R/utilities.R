@@ -534,3 +534,7 @@ jaccard_bc <- function(result,BC1,BC2){
   return(JI)
 }
 
+same_bc <- function(result,BC1,BC2){
+  if((all((result@RowxNumber[,BC1]-result@RowxNumber[,BC2])==0))&(all((result@NumberxCol[BC1,]-result@NumberxCol[BC2,])==0))){return(TRUE)}else{FALSE}
+}
+

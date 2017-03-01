@@ -1,3 +1,32 @@
+
+
+
+# TO DO: 
+# - add recursive
+# - Change BC info output of naive so it's the same as for recursive
+# - change naming of naive so it's the same as fo recursive
+# - also add original BC's in naive procedure
+# - also include recursive in pattern bibit
+# - optional: set different starting noise for extension procedure
+# - add lower_limit to naive too
+# - add mininmal columns needed to extend (TO DO: easy: startlength+X)
+# - make separate extension function which accepts bibit2 and bibit3 output (Deletes old extentions and overwrites)
+# - change BiclustGUI so bibit2 had extension + change bibit3 so it has wright input again (no EXTEND=TRUE anymore, but "none", "naive", "recursive")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## IMPORTS ##
 
 #' @importFrom foreign write.arff read.arff
@@ -252,7 +281,8 @@ bibit2biclust <- function(data,resultpath,arff_row_col){
 #' 
 #' @description Same function as \code{\link{bibit}} with an additional new noise parameter which allows 0's in the discovered biclusters (See Details for more info).
 #' 
-#' @details \code{bibit2} follows the same steps as described in the Details section of \code{\link{bibit}}.\cr
+#' @section Details - General: 
+#' \code{bibit2} follows the same steps as described in the Details section of \code{\link{bibit}}.\cr
 #' Following the general steps of the BiBit algorithm, the allowance for noise in the biclusters is inserted in the original algorithm as such:
 #' \enumerate{
 #' \item Binary data is encoded in bit words.
@@ -266,6 +296,31 @@ bibit2biclust <- function(data,resultpath,arff_row_col){
 #' What you will end up with are biclusters not only consisting out of 1's, but biclusters in which 2 rows (the starting pair) are all 1's and in which the other rows could contain 0's (= noise).\cr
 #' \cr
 #' \emph{Note:} Because of the extra checks involved in the noise allowance, using noise might increase the computation time a little bit.
+#' 
+#' 
+#' @section Details - Column Extension:
+#' An optional procedure which can be applied \emph{after} applying the BiBit algorithm (with noise) is called \emph{Column Extension}. 
+#' The procedure will add extra columns to a BiBit bicluster, keeping into account the allowed \code{extend_noise} level in each row.
+#' The primary goal is to, after applying BiBit with noise, to also try and add some noise to 2 initial `perfect` rows.
+#' Other parameters like \code{extend_mincol}and \code{extend_limitcol} can also further restrict which extensions should be discovered.
+#' \cr This procedure can be done either \emph{naively} (fast) or \emph{recursively} (more slow and thorough) with the \code{extend_columns} parameter.
+#' 
+#' \describe{
+#' \item{\code{"naive"}}{Subsetting on the bicluster rows, the column candidates are ordered based on the most 1's in a column. Afterwards, in this order, each column is sequentially checked and added if the resulted BC is still within row noise levels.
+#' \cr This has 2 major consequences:
+#' \itemize{
+#' \item{If 2 columns are identical, the first in the dataset is added, while the second isn't (depending on the noise level allowed per row).}
+#' \item{If 2 non-identical columns are viable to be added (correct row noise), the column with the most 1's is added. Afterwards the second column might not be viable anymore.}
+#' }
+#' Note that using this method will always result in a maximum of 1 extended bicluster per original bicluster.
+#' }
+#' \item{\code{"recursive"}}{
+#' Conditioning the group of candidates on the allowed row noise level, each possible/allowed combination of adding columns to the bicluster is checked. Only the resulted biclusters with the highest number of extra columns are saved.
+#' Of course this could result in multiple extensions for 1 bicluster if there are multiple `maximum added columns` results.
+#' }
+#' }
+#' 
+#' 
 #' 
 #' @author Ewoud De Troyer
 #' 
@@ -290,8 +345,17 @@ bibit2biclust <- function(data,resultpath,arff_row_col){
 #' (\emph{Example}: \code{output_path="...\\\\out\\\\bibitresult"})
 #' \cr
 #' (\emph{Description Output}: The following information about every bicluster generated will be printed in the output file: number of rows, number of columns, name of rows and name of columns.
-#' @param extend_columns (EXPERIMENTAL!) Boolean value which applies a column extension procedure to the result of the BiBit algorithm. Columns will be sequentially added, keeping the noise beneath the allowed level. The procedure is the same as in \code{\link{bibit3}}, but now no artificial rows have to be ignored in the noise levels. 
-#' \cr Note: The \code{@info} slot will also contain: a \code{BC.Extended} value which contains the indices of which Biclusters's columns were extended, and a \code{BC.Duplicates} matrix in which BC's are checked pairwise if they are duplicates after extending the columns.
+#' @param extend_columns \emph{Column Extension Parameter} Can be one of the following: \code{"none"}, \code{"naive"}, \code{"recursive"} which will apply either a naive or recursive column extension procedure. (See Details Section for more information.)
+#' \cr Based on the extension, additional biclusters will be created in the Biclust object which can be seen in the column and row names of the \code{RowxNumber} and \code{NumberxCol} slots (\code{"_Ext"} suffix).
+#' \cr The \code{info} slot will also contain some additional information. Inside this slot, \code{BC.Extended} contains info on which original biclusters were extended, how many columns were added, and in how many extra extended biclusters this resulted.
+#' \code{BC.Duplicates} contains a matrix in which BC's are checked pairwise if they are duplicates after extending the columns.
+#' @param extend_mincol \emph{Column Extension Parameter} A minimum number of columns that a bicluster should be able to be extended with before saving the result. (Default=1)
+#' @param extend_limitcol \emph{Column Extension Parameter} The number (\code{extend_limitcol>=1}) or percentage (\code{0<extend_limitcol<1}) of 1's that a column (subsetted on the BC rows) should contain at least for it to be a candidate to be added to the bicluster as an extension. (Default=1)
+#' 
+#' @param extend_noise \emph{Column Extension Parameter} The maximum allowed noise (in each row) when extending the columns of the bicluster. Can take the same values as the \code{noise} parameter. By default this takes the same value as \code{noise}.
+#' 
+#' 
+#' 
 #' @return A Biclust S4 Class object.
 #' 
 #' @examples 
@@ -310,13 +374,22 @@ bibit2biclust <- function(data,resultpath,arff_row_col){
 #' result2
 #' MaxBC(result2,top=2)
 #' }
-bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_path=NULL,extend_columns=FALSE){
+bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_path=NULL,
+                   extend_columns="none",extend_mincol=1,extend_limitcol=1,extend_noise=noise
+                   ){
   
   pm <- match.call()
   
+  if(length(extend_columns)!=1){stop("extend_columns needs 1 input")}
+  if(!(extend_columns)%in%c("none","naive","recursive")){stop("extend_columns should be \"none\", \"naive\" or \"recursive\"",call.=FALSE)}
+  if(extend_limitcol<=0){stop("extend_limitcol should be larger than 0",call.=FALSE)}
+  if(extend_mincol<1){stop("extend_mincol should be larger than or equal to 1",call.=FALSE)}
   
   if(noise<0){stop("noise parameter can not be negative",call.=FALSE)}
   if(noise>=1){noise <- as.integer(noise)}
+  
+  if(extend_noise<0){stop("extend_noise parameter can not be negative",call.=FALSE)}
+  if(extend_noise>=1){extend_noise <- as.integer(extend_noise)}
   
   if(is.null(arff_row_col)){
     time_arff <- round(proc.time()['elapsed']/60,2)
@@ -418,20 +491,43 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
                      Number=result$Number,
                      info=list(Time_Min=list(arff=time_arff,bibit=time_bibit,biclust=time_biclust,full=time_arff+time_bibit+time_biclust)))
       
-      if(extend_columns){
-        result2 <- BC_column_extension(result=result2,data=matrix,noise=noise)
+      if(extend_columns!="none"){
+        cat("\nExtending Columns using:",extend_columns,"...")
+        if(extend_columns=="naive"){
+          result2 <- BC_column_extension(result=result2,data=matrix,noise=extend_noise,extend_mincol = extend_mincol,extend_limitcol = extend_limitcol)
+        }else if(extend_columns=="recursive"){
+          result2 <- BC_column_extension_recursive(result=result2,data=matrix,noise=extend_noise,extend_mincol = extend_mincol,extend_limitcol = extend_limitcol)
+          
+        }
+        cat("DONE\n\n")
+        
         
         # Delete duplicate BC's if necessary and save info which were duplicate
+        # if(result2@Number>1){
+        #   JI_mat <- matrix(NA,nrow=result2@Number,ncol=result2@Number)
+        #   for(i.JI in 2:nrow(JI_mat)){
+        #     for(j.JI in 1:(i.JI-1)){
+        #      JI_mat[i.JI,j.JI] <-  jaccard_bc(result2,i.JI,j.JI)
+        #     }
+        #   }
+        #   JI_duplicate <- which(JI_mat==1,arr.ind=TRUE)
+        #   if(nrow(JI_duplicate)>0){
+        #     result2@info$BC.Duplicates <- matrix(paste0("BC",JI_duplicate),nrow=nrow(JI_duplicate),ncol=ncol(JI_duplicate),dimnames=list(paste0("Dup",1:nrow(JI_duplicate)),NULL))
+        #   }else{
+        #     result2@info$BC.Duplicates <- NULL
+        #   }
+        # 
+        # }
         if(result2@Number>1){
-          JI_mat <- matrix(NA,nrow=result2@Number,ncol=result2@Number)
-          for(i.JI in 2:nrow(JI_mat)){
-            for(j.JI in 1:(i.JI-1)){
-             JI_mat[i.JI,j.JI] <-  jaccard_bc(result2,i.JI,j.JI)
+          same_mat <- matrix(NA,nrow=result2@Number,ncol=result2@Number)
+          for(i.same in 2:nrow(same_mat)){
+            for(j.same in 1:(i.same-1)){
+              same_mat[i.same,j.same] <-  same_bc(result2,i.same,j.same)
             }
           }
-          JI_duplicate <- which(JI_mat==1,arr.ind=TRUE)
-          if(nrow(JI_duplicate)>0){
-            result2@info$BC.Duplicates <- matrix(paste0("BC",JI_duplicate),nrow=nrow(JI_duplicate),ncol=ncol(JI_duplicate),dimnames=list(paste0("Dup",1:nrow(JI_duplicate)),NULL))
+          same_duplicate <- which(same_mat,arr.ind=TRUE)
+          if(nrow(same_duplicate)>0){
+            result2@info$BC.Duplicates <- matrix(paste0("BC",same_duplicate),nrow=nrow(same_duplicate),ncol=ncol(same_duplicate),dimnames=list(paste0("Dup",1:nrow(same_duplicate)),NULL))
           }else{
             result2@info$BC.Duplicates <- NULL
           }
@@ -483,16 +579,10 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
 #' \describe{
 #' \item{\emph{Full Pattern: }}{Bicluster which overlaps completely (within allowed noise levels) with the provided pattern. The column size of this bicluster is always equal to the number of 1's in the pattern.}
 #' \item{\emph{Sub Pattern: }}{Biclusters which overlap with a part of the provided pattern within allowed noise levels. Will only be given if \code{subpattern=TRUE} (default). Setting this option to \code{FALSE} decreases computation time.}
-#' \item{\emph{Extended: }}{Using the resulting biclusters from the full and sub patterns, other columns will be attempted to be added to the biclusters while keeping the noise as low as possible (the number of rows in the BC stays constant). Naturally the articially added pattern rows will not be taken into account with the noise levels as they are 0 in each other column.
+#' \item{\emph{Extended: }}{Using the resulting biclusters from the full and sub patterns, other columns will be attempted to be added to the biclusters while keeping the noise as low as possible (the number of rows in the BC stays constant). 
+#' This can be done either with \code{extend_columns} equal to \code{"naive"} or \code{"recursive"}. More info on the difference can be found in the Details Section of \code{\link{bibit2}}.
+#' \cr Naturally the articially added pattern rows will not be taken into account with the noise levels as they are 0 in each other column.
 #' \cr The question which is attempted to be answered here is \emph{`Do the rows, which overlap partly or fully with the given pattern, have other similarities outside the given pattern?`}
-#' \cr\cr\strong{Disclaimer:} Currently naively implemented by going through column candidates based on most 1's in a column.
-#' \cr This has 2 major consequences:
-#' \itemize{
-#' \item{If 2 columns are identical, the first in the dataset is added, while the second isn't (depending on the noise level allowed per row).}
-#' \item{If 2 non-identical columns are viable to be added (correct row noise), the column with the most 1's is added. Afterwards the second column might not be viable anymore.}
-#' }
-#' Future planned implementation will attempt to resolve this.
-#' 
 #' }
 #' } 
 #' 
@@ -915,62 +1005,5 @@ BC_column_extension_pattern <- function(result,data,noise){
 
 
 
-BC_column_extension <- function(result,data,noise){
-  
-  time_extend <- round(proc.time()['elapsed']/60,2)
-  
-  
-  BC_extended <- rep(FALSE,result@Number)
-  
-  for(i.BC in 1:result@Number){
-    included_columns <- result@NumberxCol[i.BC,]
-    
-    column_candidates <- order(colSums(data[result@RowxNumber[,i.BC],]),decreasing=TRUE)
-    
-    GO <- TRUE
-    i.candidate <- 1
-    
-    
-    while(GO & (i.candidate<=length(column_candidates))){
-      
-      if(!included_columns[column_candidates[i.candidate]]){
-        
-        included_columns_temp <- included_columns
-        included_columns_temp[column_candidates[i.candidate]] <- TRUE
-        
-        zeros_allowed <- ifelse(((noise<1)&(noise>0)),ceiling(noise*sum(included_columns_temp)),noise)
-        
-        zeros_in_rows <- apply(data[result@RowxNumber[,i.BC],included_columns_temp],MARGIN=1,FUN=function(x){sum(x==0)})
-        
-        if(all(zeros_in_rows<=zeros_allowed)){
-          
-          included_columns <- included_columns_temp
-          i.candidate <- i.candidate+1
-          
-          
-        }else{
-          GO <- FALSE
-        }
-      }else{
-        i.candidate <- i.candidate+1
-      }
-      
-    }
-    
-    if(sum(included_columns)>sum(result@NumberxCol[i.BC,])){BC_extended[i.BC] <- TRUE}
-    result@NumberxCol[i.BC,] <- included_columns
-    
-  }
-  time_extend <- round(proc.time()['elapsed']/60-time_extend,2)
-  
-  result@info$Time_Min$extend <- time_extend
-  result@info$Time_Min$full <- result@info$Time_Min$full + time_extend
-  result@info$BC.Extended <- which(BC_extended)
-  
-  # info=list(Time_Min=list(arff=time_arff,bibit=time_bibit,biclust=time_biclust,full=time_arff+time_bibit+time_biclust)))
-
-  
-  return(result)
-}
 
 
