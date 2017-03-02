@@ -143,6 +143,16 @@ extension_recursive <- function(data,included,candidates,noise,startlength){
     
   
   if(length(candidates)>0){
+    
+    # # Check if we already have had this combination of added columns up till now, if so, we can stop, it will only result in the same BC
+    # extensions_list <- .GetEnvBIBIT("extensions")
+    # if(length(extensions_list)>0){
+    #   # only do this starting from second addition?
+    #   # Is looking in extensionslist enough? What about the ones which were not saved? Maybe save all and filter for mincol afterwards?
+    #   # in order to save RAM, maybe save the 1 adds somewhere separetely in a vector so it is not a list element
+    # }
+    
+    
     for(i.candidates in candidates){
       
       included_new <- included
@@ -280,12 +290,3 @@ BC_column_extension <- function(result,data,noise,extend_mincol=1,extend_limitco
 
 
 
-# library(BiBitR)
-# set.seed(1)
-# data <- matrix(sample(c(0,1),100*100,replace=TRUE,prob=c(0.9,0.1)),nrow=100,ncol=100)
-# data[1:10,1:10] <- 1 # BC1
-# data[11:20,11:20] <- 1 # BC2
-# data[21:30,21:30] <- 1 # BC3
-# data <- data[sample(1:nrow(data),nrow(data)),sample(1:ncol(data),ncol(data))]
-# result <- bibit(data,minr=5,minc=5)
-# result

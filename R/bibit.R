@@ -4,9 +4,16 @@
 # TO DO: 
 # - add recursive
 # - also include recursive in pattern bibit
-# - make separate extension function which accepts bibit2 and bibit3 output (Deletes old extentions and overwrites)
+# - make separate extension function which accepts bibit2 and bibit3 output (Deletes old extentions and overwrites) + give option to extend specific BC's
+# - check recursive for limitcol=1 more
+# - maybe delete checking of duplication or find faster alternative OR change with procedure where duplicates get deleted, so less comparisons 
+# OR prevent duplicates in recursion
+#       - Either at the end, so less BC's are outputted
+#       - During recursion..? if 1,2,3 already was there, 2,3,1 not necessary anymore...
 # - change BiclustGUI so bibit2 had extension + change bibit3 so it has wright input again (no EXTEND=TRUE anymore, but "none", "naive", "recursive")
 # - add message of number of extensions or when no extensions
+# - DELETE duplicates by ordering each row
+# - figure out way to delete inclusion BC's
 
 
 
@@ -513,6 +520,8 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
         # 
         # }
         if(result2@Number>1){
+          cat("Checking for Duplicate Biclusters...")
+          
           same_mat <- matrix(NA,nrow=result2@Number,ncol=result2@Number)
           for(i.same in 2:nrow(same_mat)){
             for(j.same in 1:(i.same-1)){
@@ -525,6 +534,8 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
           }else{
             result2@info$BC.Duplicates <- NULL
           }
+          
+          cat("DONE\n\n")
           
         }
         
