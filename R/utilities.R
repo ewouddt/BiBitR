@@ -490,7 +490,7 @@ bibit3_patternBC <- function(result,matrix,pattern=c(1),type=c("full","sub","ext
   type <- sapply(type,FUN=function(x){switch(x,full="FullPattern",sub="SubPattern",ext="Extended")})
   names(type) <- NULL
   
-  if(class(BC)!="numeric"){stop("BC should be numeric vector")}
+  if(!(class(BC)%in%c("integer","numeric"))){stop("BC should be numeric vector")}
   
   # Printing
   for(i.pattern in pattern){
@@ -536,5 +536,33 @@ jaccard_bc <- function(result,BC1,BC2){
 
 same_bc <- function(result,BC1,BC2){
   if((all((result@RowxNumber[,BC1]-result@RowxNumber[,BC2])==0))&(all((result@NumberxCol[BC1,]-result@NumberxCol[BC2,])==0))){return(TRUE)}else{FALSE}
+}
+
+
+
+# Small function which checks if 1 BC is contained in another. The input should be a bit word representation of the row and column booleans of both BC's
+BCcontained <- function(BC1word,BC2word){
+  intersectword <- apply(rbind(BC1word,BC2word),MARGIN=2,FUN=function(x){bitwAnd(x[1],x[2])})
+  if(all(intersectword==BC1word)){return(1)}
+  if(all(intersectword==BC2word)){return(2)}
+}
+
+
+progress_dots <- function(i,nBC){
+  if(nBC<=200){
+    if(i%%40==0 | i==nBC){
+      cat(".",i,"\n")
+    }else{
+      cat(".")
+    }
+  }else{
+    linenumber <- ceiling(nBC/5)
+    numberperdot <- round(linenumber/40,digits=0)
+    if(i%%linenumber==0 | i==nBC){
+      cat(".",i,"\n")
+    }else{
+      if(i%%numberperdot==0){cat(".")}
+    }
+  }
 }
 

@@ -5,8 +5,9 @@
 \title{The BiBit Algorithm with Noise Allowance guided by Provided Patterns.}
 \usage{
 bibit3(matrix = NULL, minr = 1, minc = 2, noise = 0,
-  pattern_matrix = NULL, subpattern = TRUE, extend_columns = TRUE,
-  pattern_combinations = FALSE, arff_row_col = NULL)
+  pattern_matrix = NULL, subpattern = TRUE, pattern_combinations = FALSE,
+  arff_row_col = NULL, extend_columns = "none", extend_mincol = 1,
+  extend_limitcol = 1, extend_noise = noise, extend_contained = FALSE)
 }
 \arguments{
 \item{matrix}{The binary input matrix.}
@@ -27,11 +28,22 @@ More specifically \code{zeros_allowed = ceiling(noise * columnsize)}. For exampl
 
 \item{subpattern}{Boolean value if sub patterns are of interest as well (default=TRUE).}
 
-\item{extend_columns}{Boolean value if columns of Biclusters should also be extended for additional results (default=TRUE). See Details Section for more info.}
-
 \item{pattern_combinations}{Boolean value if the pairwise combinations of patterns (the intersecting 1's) should also used as starting points (default=FALSE).}
 
 \item{arff_row_col}{Same argument as in \code{\link{bibit}} and \code{\link{bibit2}}. However you can only provide 1 pattern by using this option. For \code{bibit3} to work, the pattern has to be added 2 times on top of the matrix (= identical first 2 rows).}
+
+\item{extend_columns}{\emph{Column Extension Parameter}\cr Can be one of the following: \code{"none"}, \code{"naive"}, \code{"recursive"} which will apply either a naive or recursive column extension procedure. (See Details Section for more information.)
+\cr Based on the extension, additional biclusters will be created in the Biclust object which can be seen in the column and row names of the \code{RowxNumber} and \code{NumberxCol} slots (\code{"_Ext"} suffix).
+\cr The \code{info} slot will also contain some additional information. Inside this slot, \code{BC.Extended} contains info on which original biclusters were extended, how many columns were added, and in how many extra extended biclusters this resulted.
+\cr \cr \strong{Warning:} Using a percentage-based \code{extend_noise} (or \code{noise} by default) in combination with the recursive procedure will result in a large amount of biclusters and increase the computation time a lot. Depending on the data when using recursive in combination with a noise percentage, it is advised to keep it reasonable small (e.g. 10\%). Another remedy is to sufficiently increase the \code{extend_limitcol} either as a percentage or integer to limit the candidates of columns.}
+
+\item{extend_mincol}{\emph{Column Extension Parameter}\cr A minimum number of columns that a bicluster should be able to be extended with before saving the result. (Default=1)}
+
+\item{extend_limitcol}{\emph{Column Extension Parameter}\cr The number (\code{extend_limitcol>=1}) or percentage (\code{0<extend_limitcol<1}) of 1's that a column (subsetted on the BC rows) should at least contain for it to be a candidate to be added to the bicluster as an extension. (Default=1) (Increase this parameter if the recursive extension takes too long. Limiting the pool of candidates will decrease computation time, but restrict the results more.)}
+
+\item{extend_noise}{\emph{Column Extension Parameter}\cr The maximum allowed noise (in each row) when extending the columns of the bicluster. Can take the same as the \code{noise} parameter. By default this is the same value as \code{noise}.}
+
+\item{extend_contained}{\emph{Column Extension Parameter}\cr Logical value if extended results should be checked if they contain each other (and deleted if this is the case). Default = \code{FALSE}. This can be a lengthy procedure for a large amount of biclusters (>1000).}
 }
 \value{
 A S3 list object, \code{"bibit3"} in which each element (apart from the last one) corresponds with a provided pattern or combination thereof. \cr

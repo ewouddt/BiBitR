@@ -6,7 +6,8 @@
 \usage{
 bibit2(matrix = NULL, minr = 2, minc = 2, noise = 0,
   arff_row_col = NULL, output_path = NULL, extend_columns = "none",
-  extend_mincol = 1, extend_limitcol = 1, extend_noise = noise)
+  extend_mincol = 1, extend_limitcol = 1, extend_noise = noise,
+  extend_contained = FALSE)
 }
 \arguments{
 \item{matrix}{The binary input matrix.}
@@ -25,23 +26,26 @@ More specifically \code{zeros_allowed = ceiling(noise * columnsize)}. For exampl
 
 \item{arff_row_col}{If you want to circumvent the internal R function to convert the matrix to \code{.arff} format, provide the pathname of this file here. Additionally, two \code{.csv} files should be provided containing 1 column of row and column names. These two files should not contain a header or quotes around the names, simply 1 column with the names.\cr 
 (\emph{Example}: \code{arff_row_col=c("...\\\\data\\\\matrix.arff","...\\\\data\\\\rownames.csv","...\\\\data\\\\colnames.csv")})\cr
-\emph{Note:} These files can be generated with the \code{\link{make_arff_row_col}} function.}
+\emph{Note:} These files can be generated with the \code{\link{make_arff_row_col}} function.
+\cr \strong{Warning:} Should you use the \code{write.arff} function from the \code{foreign} package, remember to transpose the matrix first.}
 
 \item{output_path}{If as output, the original txt output of the Java code is desired, provide the outputh path here (without extension). In this case the \code{bibit} function will skip the transformation to a Biclust class object and simply return \code{NULL}.\cr 
 (\emph{Example}: \code{output_path="...\\\\out\\\\bibitresult"})
 \cr
 (\emph{Description Output}: The following information about every bicluster generated will be printed in the output file: number of rows, number of columns, name of rows and name of columns.}
 
-\item{extend_columns}{\emph{Column Extension Parameter} Can be one of the following: \code{"none"}, \code{"naive"}, \code{"recursive"} which will apply either a naive or recursive column extension procedure. (See Details Section for more information.)
+\item{extend_columns}{\emph{Column Extension Parameter}\cr Can be one of the following: \code{"none"}, \code{"naive"}, \code{"recursive"} which will apply either a naive or recursive column extension procedure. (See Details Section for more information.)
 \cr Based on the extension, additional biclusters will be created in the Biclust object which can be seen in the column and row names of the \code{RowxNumber} and \code{NumberxCol} slots (\code{"_Ext"} suffix).
 \cr The \code{info} slot will also contain some additional information. Inside this slot, \code{BC.Extended} contains info on which original biclusters were extended, how many columns were added, and in how many extra extended biclusters this resulted.
-\code{BC.Duplicates} contains a matrix in which BC's are checked pairwise if they are duplicates after extending the columns.}
+\cr \cr \strong{Warning:} Using a percentage-based \code{extend_noise} (or \code{noise} by default) in combination with the recursive procedure will result in a large amount of biclusters and increase the computation time a lot. Depending on the data when using recursive in combination with a noise percentage, it is advised to keep it reasonable small (e.g. 10\%). Another remedy is to sufficiently increase the \code{extend_limitcol} either as a percentage or integer to limit the candidates of columns.}
 
-\item{extend_mincol}{\emph{Column Extension Parameter} A minimum number of columns that a bicluster should be able to be extended with before saving the result. (Default=1)}
+\item{extend_mincol}{\emph{Column Extension Parameter}\cr A minimum number of columns that a bicluster should be able to be extended with before saving the result. (Default=1)}
 
-\item{extend_limitcol}{\emph{Column Extension Parameter} The number (\code{extend_limitcol>=1}) or percentage (\code{0<extend_limitcol<1}) of 1's that a column (subsetted on the BC rows) should at least contain for it to be a candidate to be added to the bicluster as an extension. (Default=1) (Increase this parameter if the recursive extension takes too long. Limiting the pool of candidates will decrease computation time, but restrict the results more.)}
+\item{extend_limitcol}{\emph{Column Extension Parameter}\cr The number (\code{extend_limitcol>=1}) or percentage (\code{0<extend_limitcol<1}) of 1's that a column (subsetted on the BC rows) should at least contain for it to be a candidate to be added to the bicluster as an extension. (Default=1) (Increase this parameter if the recursive extension takes too long. Limiting the pool of candidates will decrease computation time, but restrict the results more.)}
 
-\item{extend_noise}{\emph{Column Extension Parameter} The maximum allowed noise (in each row) when extending the columns of the bicluster. Can take the same as the \code{noise} parameter. By default this is the same value as \code{noise}.}
+\item{extend_noise}{\emph{Column Extension Parameter}\cr The maximum allowed noise (in each row) when extending the columns of the bicluster. Can take the same as the \code{noise} parameter. By default this is the same value as \code{noise}.}
+
+\item{extend_contained}{\emph{Column Extension Parameter}\cr Logical value if extended results should be checked if they contain each other (and deleted if this is the case). Default = \code{FALSE}. This can be a lengthy procedure for a large amount of biclusters (>1000).}
 }
 \value{
 A Biclust S4 Class object.
@@ -87,8 +91,10 @@ Note that using this method will always result in a maximum of 1 extended biclus
 \item{\code{"recursive"}}{
 Conditioning the group of candidates for the allowed row noise level, each possible/allowed combination of adding columns to the bicluster is checked. Only the resulted biclusters with the highest number of extra columns are saved.
 Of course this could result in multiple extensions for 1 bicluster if there are multiple `maximum added columns` results.
+
 }
 }
+\emph{Note:} These procedures are followed by a fast check if the extensions resulted in any duplicate biclusters. If so, these are deleted from the final result.
 }
 \examples{
 \dontrun{
