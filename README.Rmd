@@ -95,6 +95,13 @@ After applying BiBit (preferable with noise allowance) on the data with the extr
 
 **Update:** This procedure is currently implemented in the package in the `bibit3` function. It allows to drive the BiBit algorithm to only look for one or multiple full or sub patterns (which increases the speed). See the Documentation of `bibit3` for more info. 
 
+## Column Extension Procedure
+
+The package also allows you extend the bibit biclusters in the column dimension. More info can be found in the documentation of the `bibit2`, `bibit3` and `bibit_columnextension` functions.
+The goal of the procedure is:
+
+* *BiBit with Noise Allowance*: Try to add noise to the 2 initial perfect rows.
+* *Bibit With Patterns (Alternative Strategy)*: Do the rows, which overlap partly or fully with the given pattern, have other similarities outside the given pattern?
 
 ## Return Value
 
