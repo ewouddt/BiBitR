@@ -405,8 +405,8 @@ extension_procedure <- function(result2,data,extend_noise,extend_mincol,extend_l
         
         dup_index <- sapply(dup_names,FUN=function(x){which(x==colnames(result2@RowxNumber))})
         
-        result2@RowxNumber <- result2@RowxNumber[,-dup_index]
-        result2@NumberxCol <- result2@NumberxCol[-dup_index,]
+        result2@RowxNumber <- result2@RowxNumber[,-dup_index,drop=FALSE]
+        result2@NumberxCol <- result2@NumberxCol[-dup_index,,drop=FALSE]
         result2@Number <- nrow(result2@NumberxCol)
       }
       
