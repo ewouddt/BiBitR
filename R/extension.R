@@ -59,13 +59,16 @@ BC_column_extension_recursive <- function(result,data,noise,extend_limitcol=1,ex
   time_extend <- round(proc.time()['elapsed']/60,2)
   
   BC.extended_list <- rowxnumber_list <-  numberxcol_list <- vector("list",result@Number)
+  
+  pb <- txtProgressBar(min=1,max=result@Number,initial=1,style=3)
  
   # Apply extension for each BC
   for(i.BC in 1:result@Number){
     
     
     # Progress print
-    progress_dots(i=i.BC,nBC=result@Number)
+    setTxtProgressBar(pb,i.BC)
+    # progress_dots(i=i.BC,nBC=result@Number)
     # cat("BC",i.BC,"\n")
     #######
     
@@ -133,6 +136,8 @@ BC_column_extension_recursive <- function(result,data,noise,extend_limitcol=1,ex
     
     
   }
+  
+  close(pb)
   
   # Combine all extensions from all BC's into a single Biclust result
   
@@ -422,10 +427,14 @@ extension_procedure <- function(result2,data,extend_noise,extend_mincol,extend_l
         
         contained_vector <- rep(NA,nrow(decBC_mat))
         # note: go through all, but skip if current i.decBC or j.decBC is already in contained_vector
+        
+        pb <- txtProgressBar(min=1,max=(nrow(decBC_mat)-1),initial=1,style=3)
+        
         for(i.decBC in 1:(nrow(decBC_mat)-1)){
           
           ## Progress dots
-          progress_dots(i=i.decBC,nBC=nrow(decBC_mat)-1)
+          # progress_dots(i=i.decBC,nBC=nrow(decBC_mat)-1)
+          setTxtProgressBar(pb,i.decBC)
           #
           
           if(!(i.decBC%in%contained_vector)){
@@ -442,6 +451,7 @@ extension_procedure <- function(result2,data,extend_noise,extend_mincol,extend_l
           
           # cat(length(contained_vector[!is.na(contained_vector)]),"\n")
         }
+        close(pb)
         
         
         contained_vector <- contained_vector[!is.na(contained_vector)]
