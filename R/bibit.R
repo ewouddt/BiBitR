@@ -27,7 +27,7 @@
 #' @importFrom foreign write.arff read.arff
 #' @import biclust
 #' @importFrom methods new
-#' @importFrom utils read.table write.table combn
+#' @importFrom utils read.table write.table combn txtProgressBar setTxtProgressBar
 NULL
 
 
