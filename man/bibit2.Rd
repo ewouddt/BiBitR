@@ -18,7 +18,7 @@ bibit2(matrix = NULL, minr = 2, minc = 2, noise = 0,
 
 \item{noise}{Noise parameter which determines the amount of zero's allowed in the bicluster (i.e. in the extra added rows to the starting row pair).
 \itemize{
-\item \code{noise=0}: No noise allowed. This gives the same result as using the \code{\link{bibit}} function.
+\item \code{noise=0}: No noise allowed. This gives the same result as using the \code{\link{bibit}} function. (default)
 \item \code{0<noise<1}: The \code{noise} parameter will be a noise percentage. The number of allowed 0's in a (extra) row in the bicluster will depend on the column size of the bicluster. 
 More specifically \code{zeros_allowed = ceiling(noise * columnsize)}. For example for \code{noise=0.10} and a bicluster column size of \code{5}, the number of allowed 0's would be \code{1}.
 \item \code{noise>=1}: The \code{noise} parameter will be the number of allowed 0's in a (extra) row in the bicluster independent from the column size of the bicluster. In this noise option, the noise parameter should be an integer.

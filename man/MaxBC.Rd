@@ -4,10 +4,10 @@
 \alias{MaxBC}
 \title{Finding Maximum Size Biclusters}
 \usage{
-MaxBC(bicresult, top = 1)
+MaxBC(result, top = 1)
 }
 \arguments{
-\item{bicresult}{A \code{Biclust} result. (e.g. The return object from \code{bibit} or \code{bibit2})}
+\item{result}{A \code{Biclust} result. (e.g. The return object from \code{bibit} or \code{bibit2})}
 
 \item{top}{The number of top row/col/size dimension which are searched for. (e.g. default \code{top=1} gives only the maximum)}
 }

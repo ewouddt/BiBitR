@@ -16,9 +16,9 @@ make_arff_row_col(matrix, name = "data", path = "")
 \value{
 3 input files for BiBit:
 \itemize{
-\item 1 \code{.arff} file containing the data.
-\item 1 \code{.csv} file for the row names. The file contains 1 column of names without quotation.
-\item 1 \code{.csv} file for the column names. The file contains 1 column of names without quotation.
+\item One \code{.arff} file containing the data.
+\item One \code{.csv} file for the row names. The file contains 1 column of names without quotation.
+\item One \code{.csv} file for the column names. The file contains 1 column of names without quotation.
 }
 }
 \description{

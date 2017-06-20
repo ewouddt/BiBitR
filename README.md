@@ -80,9 +80,7 @@ Normally you would apply BiBit (with/without noise) directly on the binary data.
 
 To do this, simply add 2 (artificial) identical rows which contain the pattern/motif of interest (e.g. 2 rows with 1's in specific columns and 0 everywhere else). You can do this multiple times if multiple patterns/motifs are of interest.
 
-After applying BiBit (preferable with noise allowance) on the data with the extra artificial rows, search through all discovered biclusters to find the biclusters which contain the artificial rows, as well as the biclusters which started from the articial row pair. See functions `rows_in_BC` and `rows_full1_in_BC`.
-
-**Update:** This procedure is currently implemented in the package in the `bibit3` function. It allows to drive the BiBit algorithm to only look for one or multiple full or sub patterns (which increases the speed). See the Documentation of `bibit3` for more info.
+This procedure is currently implemented in the package in the `bibit3` function. It allows to drive the BiBit algorithm to only look for one or multiple full or sub patterns (which increases the speed). See the Documentation of `bibit3` for more info.
 
 Column Extension Procedure
 --------------------------
@@ -91,6 +89,12 @@ The package also allows you extend the bibit biclusters in the column dimension.
 
 -   *BiBit with Noise Allowance*: Try to add noise to the 2 initial perfect rows.
 -   *Bibit With Patterns (Alternative Strategy)*: Do the rows, which overlap partly or fully with the given pattern, have other similarities outside the given pattern?
+
+BiBit Workflow for larger, meaningful patterns
+----------------------------------------------
+
+Looking for Noisy Biclusters in large data using BiBit (`bibit2`) often results in many (overlapping) biclusters. In order decrease the number of biclusters and find larger meaningful patterns which make up noisy biclusters, the following workflow (`BiBitWorkflow`) can be applied.
+Note that this workflow is primarily used for data where there are many more rows (e.g. patients) than columns (e.g. symptoms). For example the workflow would discover larger meaningful symptom patterns which, conditioned on the allowed noise/zeros, subsets of the patients share.
 
 Return Value
 ------------

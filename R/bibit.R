@@ -1,25 +1,6 @@
 
 
 
-# TO DO: 
-# - add recursive
-# - also include recursive in pattern bibit
-# - make separate extension function which accepts bibit2 and bibit3 output (Deletes old extentions and overwrites) + give option to extend specific BC's
-# - make sure bibit3 accepts legacy extend_columns = TRUE for the GUI (plan update GUI later)
-# - add progress dots (40 dots, max 5 lines)
-# - add noise + dup/cont. docu, + delete docu BC.Duplicates
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 ## IMPORTS ##
@@ -27,7 +8,14 @@
 #' @importFrom foreign write.arff read.arff
 #' @import biclust
 #' @importFrom methods new
-#' @importFrom utils read.table write.table combn txtProgressBar setTxtProgressBar
+#' @importFrom utils read.table write.table combn txtProgressBar setTxtProgressBar capture.output
+#' @importFrom viridis viridis
+#' @importFrom cluster agnes clusGap maxSE
+#' @importFrom dendextend color_branches
+#' @importFrom stats hclust as.hclust cutree as.dendrogram as.dist fisher.test heatmap lm
+#' @importFrom lattice levelplot
+#' @importFrom grDevices dev.new dev.off pdf png
+#' @importFrom graphics abline barplot image legend par plot points text
 NULL
 
 
@@ -330,7 +318,7 @@ bibit2biclust <- function(data,resultpath,arff_row_col){
 #' @param minc The minimum number of columns of the Biclusters.
 #' @param noise Noise parameter which determines the amount of zero's allowed in the bicluster (i.e. in the extra added rows to the starting row pair).
 #' \itemize{
-#' \item \code{noise=0}: No noise allowed. This gives the same result as using the \code{\link{bibit}} function.
+#' \item \code{noise=0}: No noise allowed. This gives the same result as using the \code{\link{bibit}} function. (default)
 #' \item \code{0<noise<1}: The \code{noise} parameter will be a noise percentage. The number of allowed 0's in a (extra) row in the bicluster will depend on the column size of the bicluster. 
 #' More specifically \code{zeros_allowed = ceiling(noise * columnsize)}. For example for \code{noise=0.10} and a bicluster column size of \code{5}, the number of allowed 0's would be \code{1}.
 #' \item \code{noise>=1}: The \code{noise} parameter will be the number of allowed 0's in a (extra) row in the bicluster independent from the column size of the bicluster. In this noise option, the noise parameter should be an integer.
@@ -581,7 +569,7 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
 #' @param minc The minimum number of columns of the Biclusters.
 #' @param noise Noise parameter which determines the amount of zero's allowed in the bicluster (i.e. in the extra added rows to the starting row pair).
 #' \itemize{
-#' \item \code{noise=0}: No noise allowed. This gives the same result as using the \code{\link{bibit}} function.
+#' \item \code{noise=0}: No noise allowed. This gives the same result as using the \code{\link{bibit}} function. (default)
 #' \item \code{0<noise<1}: The \code{noise} parameter will be a noise percentage. The number of allowed 0's in a (extra) row in the bicluster will depend on the column size of the bicluster. 
 #' More specifically \code{zeros_allowed = ceiling(noise * columnsize)}. For example for \code{noise=0.10} and a bicluster column size of \code{5}, the number of allowed 0's would be \code{1}.
 #' \item \code{noise>=1}: The \code{noise} parameter will be the number of allowed 0's in a (extra) row in the bicluster independent from the column size of the bicluster. In this noise option, the noise parameter should be an integer.
@@ -662,7 +650,7 @@ bibit3 <- function(matrix=NULL,minr=1,minc=2,noise=0,pattern_matrix=NULL,subpatt
   if(extend_mincol<1){stop("extend_mincol should be larger than or equal to 1",call.=FALSE)}
   
   ###
-
+  
   
   if(is.null(arff_row_col)){
     
@@ -721,7 +709,7 @@ bibit3 <- function(matrix=NULL,minr=1,minc=2,noise=0,pattern_matrix=NULL,subpatt
       
       cat("DONE\n\n")
     }
-
+    
     # Delete zero-rows
     zero_rows <- which(rowSums(pattern_matrix)==0)
     if(length(zero_rows)>0){
@@ -744,13 +732,29 @@ bibit3 <- function(matrix=NULL,minr=1,minc=2,noise=0,pattern_matrix=NULL,subpatt
     nPatterns <- 1
   }
   
+  #############################################
+  ## PREPARE BASIC ARFF FILE & READ IN LINES ##
+  #############################################
+  
+  cat("Transform matrix into arff format...")
+  
+  bibitbasic_path <- tempfile("bibitbasic",fileext=".arff")
+  write.arff(t(matrix),file=bibitbasic_path)
+  basic_file <- file(bibitbasic_path)
+  basic_lines <- readLines(basic_file)
+  close(basic_file)
+  
+  number_white <- nrow(matrix)+2
+  
+  cat("DONE\n\n")
+  
   ######################################
   ## START FOR LOOP OVER ALL PATTERNS ##
   ######################################
   FINAL_RESULT <- vector("list",nPatterns)
   names(FINAL_RESULT) <- rownames(pattern_matrix)
   
-
+  
   for(i.pattern in 1:nPatterns){
     
     if(i.pattern>1){cat("\n=============================================================================\n\n")}
@@ -763,19 +767,34 @@ bibit3 <- function(matrix=NULL,minr=1,minc=2,noise=0,pattern_matrix=NULL,subpatt
       matrix_with_pattern <- rbind(matrix(rep(pattern_matrix[i.pattern,],2),nrow=2,byrow=TRUE,dimnames = list(paste0(rownames(pattern_matrix)[i.pattern],"_Art",c(1,2)))),matrix)
       
       # Transform data into arff format
-      cat("Transform matrix into arff format...",rownames(pattern_matrix)[i.pattern],"...")
-
+      cat("Changing arff file...",rownames(pattern_matrix)[i.pattern],"...")
+      
       bibitdata_path <- tempfile("bibitdata",fileext=".arff")
       bibitrows_path <- tempfile("bibitrows",fileext=".csv")
       bibitcols_path <- tempfile("bibitcols",fileext=".csv")
-
-      write.arff(t(matrix_with_pattern),file=bibitdata_path)
+      
+      
+      new_lines_meta <- basic_lines[1:number_white]
+      new_lines_data <- basic_lines[(number_white+1):length(basic_lines)]
+      
+      pattern <- apply(cbind(matrix_with_pattern[1,],matrix_with_pattern[2,]),MARGIN=1,FUN=paste0,collapse=",")
+      new_rownames <- rownames(matrix_with_pattern)[c(1,2)]
+      
+      meta1 <- new_lines_meta[1]
+      new_lines_meta <- new_lines_meta[-1]
+      new_lines_meta <- c(meta1,paste0("@attribute ",new_rownames," numeric"),new_lines_meta)
+      new_lines_data <- apply(cbind(pattern,new_lines_data),MARGIN=1,FUN=paste0,collapse=",")
+      
+      new_file <- file(bibitdata_path)
+      writeLines(c(new_lines_meta,new_lines_data),new_file)
+      close(new_file)
+      
       write.table(matrix(rownames(matrix_with_pattern),ncol=1),quote=FALSE,row.names=FALSE,col.names=FALSE,file=bibitrows_path)
       write.table(matrix(colnames(matrix_with_pattern),ncol=1),quote=FALSE,row.names=FALSE,col.names=FALSE,file=bibitcols_path)
-
+      
       cat("DONE\n")
       cat("\n")
-
+      
       time_arff <- round(proc.time()['elapsed']/60-time_arff,2)
       
     }else{
@@ -790,7 +809,7 @@ bibit3 <- function(matrix=NULL,minr=1,minc=2,noise=0,pattern_matrix=NULL,subpatt
         }
         rownames(matrix_with_pattern) <- rownames.data
         colnames(matrix_with_pattern) <- colnames.data
-
+        
       }
     }
     
@@ -804,7 +823,7 @@ bibit3 <- function(matrix=NULL,minr=1,minc=2,noise=0,pattern_matrix=NULL,subpatt
     
     time_bibit <- proc.time()['elapsed']/60
     
-
+    
     javaloc <- paste0(find.package("BiBitR")[1],"/java/BiBit3.jar")
     # javaloc <- paste0(getwd(),"/inst/java/BiBit3.jar")
     
@@ -861,10 +880,10 @@ bibit3 <- function(matrix=NULL,minr=1,minc=2,noise=0,pattern_matrix=NULL,subpatt
       
       if(subpattern & result2@Number>1){
         SubPattern <- new("Biclust",Parameters=list(Call=pm,Method="BiBit"),
-                           RowxNumber=result2@RowxNumber[,2:result2@Number,drop=FALSE],
-                           NumberxCol=result2@NumberxCol[2:result2@Number,,drop=FALSE],
-                           Number=result2@Number-1,
-                           info=list())
+                          RowxNumber=result2@RowxNumber[,2:result2@Number,drop=FALSE],
+                          NumberxCol=result2@NumberxCol[2:result2@Number,,drop=FALSE],
+                          Number=result2@Number-1,
+                          info=list())
       }else{
         SubPattern <- new("Biclust",Parameters=list(Call=pm,Method="BiBit"),
                           RowxNumber=matrix(FALSE,nrow=nrow.data,ncol=1),
@@ -889,10 +908,10 @@ bibit3 <- function(matrix=NULL,minr=1,minc=2,noise=0,pattern_matrix=NULL,subpatt
           if(length(deleteBC_index)>0){
             if(length(deleteBC_index)==result2_temp@Number){
               result2_temp <- new("Biclust",Parameters=list(Call=pm,Method="BiBit"),
-                                                      RowxNumber=matrix(FALSE,nrow=nrow.data,ncol=1),
-                                                      NumberxCol=matrix(FALSE,nrow=1,ncol=ncol.data),
-                                                      Number=0,
-                                                      info=list())
+                                  RowxNumber=matrix(FALSE,nrow=nrow.data,ncol=1),
+                                  NumberxCol=matrix(FALSE,nrow=1,ncol=ncol.data),
+                                  Number=0,
+                                  info=list())
             }else{
               result2_temp@RowxNumber <- result2_temp@RowxNumber[,-deleteBC_index]
               result2_temp@NumberxCol <- result2_temp@NumberxCol[-deleteBC_index,]
@@ -902,7 +921,7 @@ bibit3 <- function(matrix=NULL,minr=1,minc=2,noise=0,pattern_matrix=NULL,subpatt
         }
         ########################
         ########################
-
+        
         # Use extension_procedure, delete original BC's, check if there were extensions...
         # check for BC.Extender, if NULL, then make similar object below, otherwise delete parts
         
@@ -931,7 +950,7 @@ bibit3 <- function(matrix=NULL,minr=1,minc=2,noise=0,pattern_matrix=NULL,subpatt
         
         
         # TO DO: take time extend from result + TO DO: add and check parameters + add documentaiton
-
+        
       }else{
         Extended <- new("Biclust",Parameters=list(Call=pm,Method="BiBit"),
                         RowxNumber=matrix(FALSE,nrow=nrow.data,ncol=1),
@@ -949,7 +968,7 @@ bibit3 <- function(matrix=NULL,minr=1,minc=2,noise=0,pattern_matrix=NULL,subpatt
       
     }else{
       
-
+      
       result2 <- new("Biclust",Parameters=list(Call=pm,Method="BiBit"),
                      RowxNumber=matrix(FALSE,nrow=nrow.data,ncol=1),
                      NumberxCol=matrix(FALSE,nrow=1,ncol=ncol.data),
@@ -1002,6 +1021,7 @@ bibit3 <- function(matrix=NULL,minr=1,minc=2,noise=0,pattern_matrix=NULL,subpatt
 
 
 
+
 #' @title Column Extension Procedure
 #' 
 #' @description Function which accepts result from \code{\link{bibit}}, \code{\link{bibit2}} or \code{\link{bibit3}} and will (re-)apply the column extension procedure. This means if the result already contained extended biclusters that these will be deleted.
@@ -1038,7 +1058,7 @@ bibit3 <- function(matrix=NULL,minr=1,minc=2,noise=0,pattern_matrix=NULL,subpatt
 #' \describe{
 #' \item{\code{bibit}}{\code{BC} directly takes the corresponding biclusters from the result and extends them. (e.g. \code{BC=c(1,10)} is then remapped to \code{c("BC1","BC1_Ext1","BC2","BC2_Ext1") in the new output})}
 #' \item{\code{bibit2}}{\code{BC} corresponds with the original non-extended biclusters from the \code{\link{bibit2}} result. These original biclusters are selected and extended. (e.g. \code{BC=c(1,10)} selects biclusters \code{c("BC1","BC10")} which are then remapped to \code{c("BC1","BC1_Ext1","BC2","BC2_Ext1") in the new output})} 
-#' \item{\code{bibit3}}{\code{BC} corresponds with the biclusters when combining the FULLPATTERN and SUBPATTERN result together. For example choosing \code{BC=1} would only select the 1 FULLPATTERN bicluster for each pattern and try to extend it. (e.g. \code{BC=c(1,10)} selects biclusters 1 and 10 from the combined fullpattern and subpattern result which are then remapped to \code{c("BC1","BC1_Ext1","BC2","BC2_Ext1") in the new output}) }
+#' \item{\code{bibit3}}{\code{BC} corresponds with the biclusters when combining the FULLPATTERN and SUBPATTERN result together. For example choosing \code{BC=1} would only select the 1 FULLPATTERN bicluster for each pattern and try to extend it. (e.g. \code{BC=c(1,10)} selects biclusters 1 and 10 from the combined fullpattern and subpattern result (meaning the full pattern BC and the 9th subpattern BC) which are then remapped to \code{c("BC1","BC1_Ext1","BC2","BC2_Ext1") in the new output}) }
 #' }
 #' 
 #' @param extend_columns \emph{Column Extension Parameter}\cr Can be one of the following: \code{"naive"} or \code{"recursive"} which will apply either a naive or recursive column extension procedure. (See Details Section for more information.)
