@@ -50,7 +50,33 @@ Afterwards, using the new \code{noise} level, new rows are grown and the returne
 }
 \examples{
 \dontrun{
-test
+## Prepare some data ##
+set.seed(254)
+mat <- matrix(sample(c(0,1),5000*50,replace=TRUE,prob=c(1-0.15,0.15)),
+              nrow=5000,ncol=50)
+mat[1:200,1:10] <- matrix(sample(c(0,1),200*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                          nrow=200,ncol=10)
+mat[300:399,6:15] <- matrix(sample(c(0,1),100*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                            nrow=100,ncol=10)
+mat[400:599,21:30] <- matrix(sample(c(0,1),200*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                             nrow=200,ncol=10)
+mat[700:799,29:38] <- matrix(sample(c(0,1),100*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                             nrow=100,ncol=10)
+mat <- mat[sample(1:5000,5000,replace=FALSE),sample(1:50,50,replace=FALSE)]
+
+## Apply BiBitWorkflow ##
+out <- BiBitWorkflow(matrix=mat,minr=50,minc=5,noise=0.1,cut_type="number",cut_pm=4)
+summary(out$Biclust)
+
+## Update Rows with new noise level on Biclust Obect -> returns Biclust Object ##
+out_new <- UpdateBiclust_RowNoise(result=out$Biclust,matrix=mat,noise=0.3)
+summary(out_new)
+out_new@info$Noise.Threshold # New Noise Levels
+
+## Update Rows with new noise level on BiBitWorkflow Obect -> returns BiBitWorkflow Object ##
+out_new2 <- UpdateBiclust_RowNoise(result=out,matrix=mat,noise=0.2)
+summary(out_new2$Biclust)
+out_new2$info$MergedNoiseThresholds # New Noise Levels
 }
 }
 \author{

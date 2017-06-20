@@ -18,7 +18,7 @@ BiBitWorkflow(matrix, minr = 2, minc = 2, similarity_type = "col",
 
 \item{minc}{The minimum number of columns of the Biclusters.}
 
-\item{similarity_type}{Which dimension to use for the Jaccard Index in Step 2. This is either columns (\code{"col"}, default) or both (\code{"both"}). Note}
+\item{similarity_type}{Which dimension to use for the Jaccard Index in Step 2. This is either columns (\code{"col"}, default) or both (\code{"both"}).}
 
 \item{func}{Which clustering function to use in Step 3. Either \code{"agnes"} (= default) or \code{"hclust"}.}
 
@@ -33,7 +33,7 @@ BiBitWorkflow(matrix, minr = 2, minc = 2, similarity_type = "col",
 
 \item{cut_type}{Which method should be used to decide the number of clusters in the tree in Step 4? 
 \itemize{
-\item \code{"gap"}: Use the Gap Statistic. (default)
+\item \code{"gap"}: Use the Gap Statistic (default).
 \item \code{"number"}: Select a set number of clusters.
 \item \code{"height"}: Cut the tree at specific dissimilarity height.
 }}
@@ -59,7 +59,7 @@ More specifically \code{zeros_allowed = ceiling(noise * columnsize)}. For exampl
 
 \item{noise_select}{Should the allowed noise level be automatically selected for each pattern? (Using ad hoc method to find the elbow/kink in the Noise Scree plots)
 \itemize{
-\item \code{noise_select=0}: Do \emph{NOT} automatically select the noise levels. Use the the noise level given in the \code{noise} parameter (default)
+\item \code{noise_select=0}: Do \emph{NOT} automatically select the noise levels. Use the the noise level given in the \code{noise} parameter (default).
 \item \code{noise_select=1}: Using the Noise Scree plot (with 'Added Rows' on the y-axis), find the noise level where the current number of added rows at this noise level is larger than the mean of 'added rows' at the lower noise levels. 
 After locating this noise level, lower the noise level by 1. This is your automatically selected elbow/kink and therefore your noise level.
 \item \code{noise_select=2}: Applies the same steps as for \code{noise_select=1}, but instead of decreasing the noise level by only 1, keep decreasing the noise level until the number of added rows isn't decreasing anymore either.
@@ -72,7 +72,7 @@ After locating this noise level, lower the noise level by 1. This is your automa
 \item Dendrogram of the tree, its clusters colored after the chosen cut has been applied.
 \item Noise Scree plots for all the Saved Patterns. Two plots will be plotted, both with Noise on the x-axis. The first one will have the number of Added Number of Rows on that noise level on the y-axis, while the second will have the Total Number of Rows (i.e. cumulative of the first).
 If the title of one of the subplots is red, then this means that the Bicluster grown from this pattern, using the chosen noise level, was eventually deleted due to being a duplicate or non-maximal.
-\item Image plot of the JI similarity matrix between the final biclusters after Step 6.
+\item Image plot of the Jaccard Index similarity matrix between the final biclusters after Step 6.
 }}
 
 \item{BCresult}{Import a BiBit Biclust result for Step 1 (e.g. extract from an older BiBitWorkflow object \code{$info$BiclustInitial}). This can be useful if you want to cut the tree differently/make different plots, but don't want to do the BiBit calculation again.}
@@ -130,8 +130,53 @@ Using the described workflow (and column similarity in Step 2), the final result
 }
 \examples{
 \dontrun{
+## Simulate Data ##
+# DATA: 10000x50
+# BC1: 200x10
+# BC2: 100x10
+# BC1 and BC2 overlap 5 columns
 
-test
+# BC3: 200x10
+# BC4: 100x10
+# BC3 and bC4 overlap 2 columns
+
+# Background 1 percentage: 0.15
+# BC Signal Percentage: 0.9
+ 
+set.seed(273)
+mat <- matrix(sample(c(0,1),10000*50,replace=TRUE,prob=c(1-0.15,0.15)),
+              nrow=10000,ncol=50)
+mat[1:200,1:10] <- matrix(sample(c(0,1),200*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                          nrow=200,ncol=10)
+mat[300:399,6:15] <- matrix(sample(c(0,1),100*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                            nrow=100,ncol=10)
+mat[400:599,21:30] <- matrix(sample(c(0,1),200*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                             nrow=200,ncol=10)
+mat[700:799,29:38] <- matrix(sample(c(0,1),100*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                             nrow=100,ncol=10)
+mat <- mat[sample(1:10000,10000,replace=FALSE),sample(1:50,50,replace=FALSE)]
+
+
+# Computing gap statistic for initial 1381 BC takes approx. 15 min.
+# Gap Statistic chooses 4 clusters. 
+out <- BiBitWorkflow(matrix=mat,minr=50,minc=5,noise=0.2) 
+summary(out$Biclust)
+
+# Reduce computation by selecting number of clusters manually.
+# Note: The "ClusterRowCoverage" function can be used to provided extra info 
+#       on the number of cluster choice.
+#       How?
+#       - More clusters result in smaller column patterns and more matching rows.
+#       - Less clusters result in larger column patterns and less matching rows.
+# Step 1: Initial Workflow Run
+out2 <- BiBitWorkflow(matrix=mat,minr=50,minc=5,noise=0.2,cut_type="number",cut_pm=10)
+# Step 2: Use ClusterRowCoverage
+temp <- ClusterRowCoverage(result=out2,matrix=mat,noise=0.2,plots=2)
+# Step 3: Use BiBitWorkflow again (using previously computed parts) with new cut parameter
+out3 <- BiBitWorkflow(matrix=mat,minr=50,minc=5,noise=0.2,cut_type="number",cut_pm=4,
+                      BCresult = out2$info$BiclustInitial,
+                      simmatresult = out2$info$BiclustSimInitial)
+summary(out3$Biclust)
 }
 }
 \author{

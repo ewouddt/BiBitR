@@ -12,7 +12,7 @@
 # - complete documentation
 # -  add memory option to bibit/bibit2/bibit3
 # - Add barplot of noise in columns of BC
-
+# - Make CompareResultJI more efficient for single result
 
 
 
@@ -40,7 +40,7 @@
 #' @param matrix The binary input matrix.
 #' @param minr The minimum number of rows of the Biclusters.
 #' @param minc The minimum number of columns of the Biclusters.
-#' @param similarity_type Which dimension to use for the Jaccard Index in Step 2. This is either columns (\code{"col"}, default) or both (\code{"both"}). Note
+#' @param similarity_type Which dimension to use for the Jaccard Index in Step 2. This is either columns (\code{"col"}, default) or both (\code{"both"}).
 #' @param func Which clustering function to use in Step 3. Either \code{"agnes"} (= default) or \code{"hclust"}.
 #' @param link Which clustering link to use in Step 3. The available links (depending on \code{func}) are:
 #' \itemize{
@@ -51,7 +51,7 @@
 #' @param par.method Additional parameters used for flexible link (See \code{\link[cluster]{agnes}}). Default is \code{c(0.625)}
 #' @param cut_type Which method should be used to decide the number of clusters in the tree in Step 4? 
 #' \itemize{
-#' \item \code{"gap"}: Use the Gap Statistic. (default)
+#' \item \code{"gap"}: Use the Gap Statistic (default).
 #' \item \code{"number"}: Select a set number of clusters.
 #' \item \code{"height"}: Cut the tree at specific dissimilarity height.
 #' }
@@ -75,7 +75,7 @@
 #' }
 #' @param noise_select Should the allowed noise level be automatically selected for each pattern? (Using ad hoc method to find the elbow/kink in the Noise Scree plots)
 #' \itemize{
-#' \item \code{noise_select=0}: Do \emph{NOT} automatically select the noise levels. Use the the noise level given in the \code{noise} parameter (default)
+#' \item \code{noise_select=0}: Do \emph{NOT} automatically select the noise levels. Use the the noise level given in the \code{noise} parameter (default).
 #' \item \code{noise_select=1}: Using the Noise Scree plot (with 'Added Rows' on the y-axis), find the noise level where the current number of added rows at this noise level is larger than the mean of 'added rows' at the lower noise levels. 
 #' After locating this noise level, lower the noise level by 1. This is your automatically selected elbow/kink and therefore your noise level.
 #' \item \code{noise_select=2}: Applies the same steps as for \code{noise_select=1}, but instead of decreasing the noise level by only 1, keep decreasing the noise level until the number of added rows isn't decreasing anymore either.
@@ -88,7 +88,7 @@
 #' \item Dendrogram of the tree, its clusters colored after the chosen cut has been applied.
 #' \item Noise Scree plots for all the Saved Patterns. Two plots will be plotted, both with Noise on the x-axis. The first one will have the number of Added Number of Rows on that noise level on the y-axis, while the second will have the Total Number of Rows (i.e. cumulative of the first).
 #' If the title of one of the subplots is red, then this means that the Bicluster grown from this pattern, using the chosen noise level, was eventually deleted due to being a duplicate or non-maximal.
-#' \item Image plot of the JI similarity matrix between the final biclusters after Step 6.
+#' \item Image plot of the Jaccard Index similarity matrix between the final biclusters after Step 6.
 #' }
 #' @param BCresult Import a BiBit Biclust result for Step 1 (e.g. extract from an older BiBitWorkflow object \code{$info$BiclustInitial}). This can be useful if you want to cut the tree differently/make different plots, but don't want to do the BiBit calculation again.
 #' @param simmatresult Import a (custom) Similarity Matrix (e.g. extract from older BiBitWorkflow object \code{$info$BiclustSimInitial}). Note that Step 1 (BiBit) will still be executed if \code{BCresult} is not provided.
@@ -122,8 +122,53 @@
 #'  
 #' @examples 
 #' \dontrun{
+#' ## Simulate Data ##
+#' # DATA: 10000x50
+#' # BC1: 200x10
+#' # BC2: 100x10
+#' # BC1 and BC2 overlap 5 columns
 #' 
-#' test
+#' # BC3: 200x10
+#' # BC4: 100x10
+#' # BC3 and bC4 overlap 2 columns
+#' 
+#' # Background 1 percentage: 0.15
+#' # BC Signal Percentage: 0.9
+#'  
+#' set.seed(273)
+#' mat <- matrix(sample(c(0,1),10000*50,replace=TRUE,prob=c(1-0.15,0.15)),
+#'               nrow=10000,ncol=50)
+#' mat[1:200,1:10] <- matrix(sample(c(0,1),200*10,replace=TRUE,prob=c(1-0.9,0.9)),
+#'                           nrow=200,ncol=10)
+#' mat[300:399,6:15] <- matrix(sample(c(0,1),100*10,replace=TRUE,prob=c(1-0.9,0.9)),
+#'                             nrow=100,ncol=10)
+#' mat[400:599,21:30] <- matrix(sample(c(0,1),200*10,replace=TRUE,prob=c(1-0.9,0.9)),
+#'                              nrow=200,ncol=10)
+#' mat[700:799,29:38] <- matrix(sample(c(0,1),100*10,replace=TRUE,prob=c(1-0.9,0.9)),
+#'                              nrow=100,ncol=10)
+#' mat <- mat[sample(1:10000,10000,replace=FALSE),sample(1:50,50,replace=FALSE)]
+#' 
+#' 
+#' # Computing gap statistic for initial 1381 BC takes approx. 15 min.
+#' # Gap Statistic chooses 4 clusters. 
+#' out <- BiBitWorkflow(matrix=mat,minr=50,minc=5,noise=0.2) 
+#' summary(out$Biclust)
+#' 
+#' # Reduce computation by selecting number of clusters manually.
+#' # Note: The "ClusterRowCoverage" function can be used to provided extra info 
+#' #       on the number of cluster choice.
+#' #       How?
+#' #       - More clusters result in smaller column patterns and more matching rows.
+#' #       - Less clusters result in larger column patterns and less matching rows.
+#' # Step 1: Initial Workflow Run
+#' out2 <- BiBitWorkflow(matrix=mat,minr=50,minc=5,noise=0.2,cut_type="number",cut_pm=10)
+#' # Step 2: Use ClusterRowCoverage
+#' temp <- ClusterRowCoverage(result=out2,matrix=mat,noise=0.2,plots=2)
+#' # Step 3: Use BiBitWorkflow again (using previously computed parts) with new cut parameter
+#' out3 <- BiBitWorkflow(matrix=mat,minr=50,minc=5,noise=0.2,cut_type="number",cut_pm=4,
+#'                       BCresult = out2$info$BiclustInitial,
+#'                       simmatresult = out2$info$BiclustSimInitial)
+#' summary(out3$Biclust)
 #' }
 BiBitWorkflow <- function(matrix,minr=2,minc=2,
                                       similarity_type="col",
@@ -528,9 +573,40 @@ BiBitWorkflow <- function(matrix,minr=2,minc=2,
 #' }
 #' }
 #' @author Ewoud De Troyer
+#' @export
 #' @return Depending on \code{result}, a \code{FisherResult} and/or \code{FisherInfo} object will be added to the \code{result} and returned (see Details).
 #' @examples \dontrun{
-#' test
+#' ## Prepare some data ##
+#' set.seed(254)
+#' mat <- matrix(sample(c(0,1),5000*50,replace=TRUE,prob=c(1-0.15,0.15)),
+#'               nrow=5000,ncol=50)
+#' mat[1:200,1:10] <- matrix(sample(c(0,1),200*10,replace=TRUE,prob=c(1-0.9,0.9)),
+#'                           nrow=200,ncol=10)
+#' mat[300:399,6:15] <- matrix(sample(c(0,1),100*10,replace=TRUE,prob=c(1-0.9,0.9)),
+#'                             nrow=100,ncol=10)
+#' mat[400:599,21:30] <- matrix(sample(c(0,1),200*10,replace=TRUE,prob=c(1-0.9,0.9)),
+#'                              nrow=200,ncol=10)
+#' mat[700:799,29:38] <- matrix(sample(c(0,1),100*10,replace=TRUE,prob=c(1-0.9,0.9)),
+#'                              nrow=100,ncol=10)
+#' mat <- mat[sample(1:5000,5000,replace=FALSE),sample(1:50,50,replace=FALSE)]
+#' 
+#' ## Apply BiBitWorkflow ##
+#' out <- BiBitWorkflow(matrix=mat,minr=50,minc=5,noise=0.2,cut_type="number",cut_pm=4)
+#' 
+#' ## Apply RowTest_Fisher on Biclust Object -> returns Biclust Object ##
+#' out_new <- RowTest_Fisher(result=out$Biclust,matrix=mat)
+#' # FisherResult output in info slot
+#' str(out_new@info$FisherResult)
+#' # FisherInfo output in info slot (comparison with original BC's)
+#' str(out_new@info$FisherInfo)
+#' 
+#' 
+#' ## Apply RowTest_Fisher on BiBitWorkflow Object -> returns BiBitWorkflow Object ##
+#' out_new2 <- RowTest_Fisher(result=out,matrix=mat)
+#' # FisherResult output in BiBitWorkflow info element
+#' str(out_new2$info$FisherResult)
+#' # Fisher output is added to "NoiseScree" plot
+#' NoiseScree(result=out_new2,matrix=mat,type="Added")
 #' }
 RowTest_Fisher <- function(result,matrix,p.adjust="BH",alpha=0.05,pattern=NULL){
   # Accepts Biclust output
@@ -640,9 +716,37 @@ RowTest_Fisher <- function(result,matrix,p.adjust="BH",alpha=0.05,pattern=NULL){
 #' }
 #' If information on the Fisher Exact Test is available, then this info will added to the plot (noise level versus significant rows).
 #' @author Ewoud De Troyer
+#' @export
 #' @return \code{NULL}
 #' @examples \dontrun{
-#' test
+#' ## Prepare some data ##
+#' set.seed(254)
+#' mat <- matrix(sample(c(0,1),5000*50,replace=TRUE,prob=c(1-0.15,0.15)),
+#'               nrow=5000,ncol=50)
+#' mat[1:200,1:10] <- matrix(sample(c(0,1),200*10,replace=TRUE,prob=c(1-0.9,0.9)),
+#'                           nrow=200,ncol=10)
+#' mat[300:399,6:15] <- matrix(sample(c(0,1),100*10,replace=TRUE,prob=c(1-0.9,0.9)),
+#'                             nrow=100,ncol=10)
+#' mat[400:599,21:30] <- matrix(sample(c(0,1),200*10,replace=TRUE,prob=c(1-0.9,0.9)),
+#'                              nrow=200,ncol=10)
+#' mat[700:799,29:38] <- matrix(sample(c(0,1),100*10,replace=TRUE,prob=c(1-0.9,0.9)),
+#'                              nrow=100,ncol=10)
+#' mat <- mat[sample(1:5000,5000,replace=FALSE),sample(1:50,50,replace=FALSE)]
+#' 
+#' ## Apply BiBitWorkflow ##
+#' out <- BiBitWorkflow(matrix=mat,minr=50,minc=5,noise=0.2,cut_type="number",cut_pm=4)
+#' # Make Noise Scree Plot - Default
+#' NoiseScree(result=out,matrix=mat,type="Added")
+#' NoiseScree(result=out,matrix=mat,type="Total")
+#' # Make Noise Scree Plot - Use Automatic Noies Selection
+#' NoiseScree(result=out,matrix=mat,type="Added",noise_select=2)
+#' NoiseScree(result=out,matrix=mat,type="Total",noise_select=2)
+#' 
+#' ## Apply RowTest_Fisher on BiBitWorkflow Object ##
+#' out2 <- RowTest_Fisher(result=out,matrix=mat)
+#' # Fisher output is added to "NoiseScree" plot
+#' NoiseScree(result=out2,matrix=mat,type="Added")
+#' NoiseScree(result=out2,matrix=mat,type="Total")
 #' }
 NoiseScree <- function(result,matrix,type=c("Added","Total"),pattern=NULL,noise_select=0,alpha=0.05){
   # accepts biclust output OR list of patterns OR give workflow a class
@@ -768,7 +872,7 @@ NoiseScree <- function(result,matrix,type=c("Added","Total"),pattern=NULL,noise_
 # More clusters: more row coverage, smaller patterns ; Less clusters: less coverage, larger patterns (depending on initial bibit result)
 
 #' @title Row Coverage Plots
-#' @description Plots number of clusters (of hierarchical tree) versus number/percentage of row coverage and number of final biclusters (see Details for more information).
+#' @description Plotting function to be used with the \code{\link{BiBitWorkflow}} output. It plots the number of clusters (of hierarchical tree) versus number/percentage of row coverage and number of final biclusters (see Details for more information).
 #' @param result A BiBitWorkflow Object.
 #' @param matrix Accompanying binary data matrix which was used to obtain \code{result}.
 #' @param maxCluster Maximum number of clusters to cut the tree at (default=20).
@@ -803,9 +907,27 @@ NoiseScree <- function(result,matrix,type=c("Added","Total"),pattern=NULL,noise_
 #' @details The graph of number of chosen tree clusters versus the final row coverage can help you to make a decision on how many clusters to choose in the hierarchical tree. 
 #' The more clusters you choose, the smaller (albeit more similar) the patterns are and the more rows will fit your patterns (i.e. more row coverage). 
 #' @author Ewoud De Troyer
+#' @export
 #' @return A data frame containing the number of clusters and the corresponding number of row coverage, percentage of row coverage and the number of final biclusters. 
 #' @examples \dontrun{
-#' test
+#' ## Prepare some data ##
+#' set.seed(254)
+#' mat <- matrix(sample(c(0,1),5000*50,replace=TRUE,prob=c(1-0.15,0.15)),
+#'               nrow=5000,ncol=50)
+#' mat[1:200,1:10] <- matrix(sample(c(0,1),200*10,replace=TRUE,prob=c(1-0.9,0.9)),
+#'                           nrow=200,ncol=10)
+#' mat[300:399,6:15] <- matrix(sample(c(0,1),100*10,replace=TRUE,prob=c(1-0.9,0.9)),
+#'                             nrow=100,ncol=10)
+#' mat[400:599,21:30] <- matrix(sample(c(0,1),200*10,replace=TRUE,prob=c(1-0.9,0.9)),
+#'                              nrow=200,ncol=10)
+#' mat[700:799,29:38] <- matrix(sample(c(0,1),100*10,replace=TRUE,prob=c(1-0.9,0.9)),
+#'                              nrow=100,ncol=10)
+#' mat <- mat[sample(1:5000,5000,replace=FALSE),sample(1:50,50,replace=FALSE)]
+#' 
+#' ## Apply BiBitWorkflow ##
+#' out <- BiBitWorkflow(matrix=mat,minr=50,minc=5,noise=0.2,cut_type="number",cut_pm=10)
+#' # Make ClusterRowCoverage Plots
+#' ClusterRowCoverage(result=out,matrix=mat,maxCluster=20,noise=0.2)
 #' }
 ClusterRowCoverage <- function(result,matrix,maxCluster=20,
                                noise=0.1,noise_select = 0,
@@ -936,7 +1058,7 @@ ClusterRowCoverage <- function(result,matrix,maxCluster=20,
 
 
 #' @title Compare Biclustering Results using Jaccard Index
-#' @description Creates a heatmap of the Jaccard Index (Row, Column or both dimensions) in order to compare 2 different biclustering results or compare the biclusters of a single result.
+#' @description Creates a heatmap and returns a similarity matrix of the Jaccard Index (Row, Column or both dimensions) in order to compare 2 different biclustering results or compare the biclusters of a single result.
 #' @details The Jaccard Index between two biclusters is calculated as following:
 #' \deqn{JI(BC1,BC2) = \frac{(m_1+m_2-m_{12})}{m_{12}}}
 #' in which
@@ -959,6 +1081,7 @@ ClusterRowCoverage <- function(result,matrix,maxCluster=20,
 #' @param type Of which dimension should the Jaccard Index be computed? Can be \code{"row"}, \code{"col"} or \code{"both"} (default).
 #' @param plot Logical value if plot should be outputted (default=\code{TRUE}).
 #' @author Ewoud De Troyer
+#' @export
 #' @return A list containing
 #' \itemize{
 #' \item \code{SimMat}: The JI Similarity Matrix between the compared biclusters.
@@ -966,7 +1089,27 @@ ClusterRowCoverage <- function(result,matrix,maxCluster=20,
 #' }
 #' @examples
 #' \dontrun{
-#' test
+#' data <- matrix(sample(c(0,1),100*100,replace=TRUE,prob=c(0.9,0.1)),nrow=100,ncol=100)
+#' data[1:10,1:10] <- 1 # BC1
+#' data[11:20,11:20] <- 1 # BC2
+#' data[21:30,21:30] <- 1 # BC3
+#' data <- data[sample(1:nrow(data),nrow(data)),sample(1:ncol(data),ncol(data))]
+#' 
+#' # Result 1
+#' result1 <- bibit(data,minr=5,minc=5)
+#' result1
+#' 
+#' # Result 2
+#' result2 <- bibit(data,minr=2,minc=2)
+#' result2
+#' 
+#' ## Compare all BC's of Result 1 ##
+#' Sim1 <- CompareResultJI(BCresult1=result1,type="both")
+#' Sim1$SimMat
+#' 
+#' ## Compare BC's of Result 1 and 2 ##
+#' Sim12 <- CompareResultJI(BCresult1=result1,BCresult2=result2,type="both",plot=FALSE)
+#' str(Sim12)
 #' }
 CompareResultJI <- function(BCresult1,BCresult2=NULL,type="both",plot=TRUE){
   
@@ -1081,10 +1224,37 @@ CompareResultJI <- function(BCresult1,BCresult2=NULL,type="both",plot=TRUE){
 #' } 
 #' @param removeBC \emph{(Only applicable when result is a Biclust object)} Logical value if after applying a new noise level, duplicate and non-maximal BC's should be deleted.
 #' @author Ewoud De Troyer
+#' @export
 #' @return A \code{Biclust} or \code{BiBitWorkflow} Object (See Details)
 #' @examples
 #' \dontrun{
-#' test
+#' ## Prepare some data ##
+#' set.seed(254)
+#' mat <- matrix(sample(c(0,1),5000*50,replace=TRUE,prob=c(1-0.15,0.15)),
+#'               nrow=5000,ncol=50)
+#' mat[1:200,1:10] <- matrix(sample(c(0,1),200*10,replace=TRUE,prob=c(1-0.9,0.9)),
+#'                           nrow=200,ncol=10)
+#' mat[300:399,6:15] <- matrix(sample(c(0,1),100*10,replace=TRUE,prob=c(1-0.9,0.9)),
+#'                             nrow=100,ncol=10)
+#' mat[400:599,21:30] <- matrix(sample(c(0,1),200*10,replace=TRUE,prob=c(1-0.9,0.9)),
+#'                              nrow=200,ncol=10)
+#' mat[700:799,29:38] <- matrix(sample(c(0,1),100*10,replace=TRUE,prob=c(1-0.9,0.9)),
+#'                              nrow=100,ncol=10)
+#' mat <- mat[sample(1:5000,5000,replace=FALSE),sample(1:50,50,replace=FALSE)]
+#' 
+#' ## Apply BiBitWorkflow ##
+#' out <- BiBitWorkflow(matrix=mat,minr=50,minc=5,noise=0.1,cut_type="number",cut_pm=4)
+#' summary(out$Biclust)
+#' 
+#' ## Update Rows with new noise level on Biclust Obect -> returns Biclust Object ##
+#' out_new <- UpdateBiclust_RowNoise(result=out$Biclust,matrix=mat,noise=0.3)
+#' summary(out_new)
+#' out_new@info$Noise.Threshold # New Noise Levels
+#' 
+#' ## Update Rows with new noise level on BiBitWorkflow Obect -> returns BiBitWorkflow Object ##
+#' out_new2 <- UpdateBiclust_RowNoise(result=out,matrix=mat,noise=0.2)
+#' summary(out_new2$Biclust)
+#' out_new2$info$MergedNoiseThresholds # New Noise Levels
 #' }
 UpdateBiclust_RowNoise <- function(result,matrix, noise=0.1,noise_select=0,removeBC=FALSE){
   

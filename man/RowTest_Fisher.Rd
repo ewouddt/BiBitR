@@ -53,7 +53,37 @@ Afterwards the following object is added to the \code{$info} slot of the BiBitWo
 }
 \examples{
 \dontrun{
-test
+## Prepare some data ##
+set.seed(254)
+mat <- matrix(sample(c(0,1),5000*50,replace=TRUE,prob=c(1-0.15,0.15)),
+              nrow=5000,ncol=50)
+mat[1:200,1:10] <- matrix(sample(c(0,1),200*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                          nrow=200,ncol=10)
+mat[300:399,6:15] <- matrix(sample(c(0,1),100*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                            nrow=100,ncol=10)
+mat[400:599,21:30] <- matrix(sample(c(0,1),200*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                             nrow=200,ncol=10)
+mat[700:799,29:38] <- matrix(sample(c(0,1),100*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                             nrow=100,ncol=10)
+mat <- mat[sample(1:5000,5000,replace=FALSE),sample(1:50,50,replace=FALSE)]
+
+## Apply BiBitWorkflow ##
+out <- BiBitWorkflow(matrix=mat,minr=50,minc=5,noise=0.2,cut_type="number",cut_pm=4)
+
+## Apply RowTest_Fisher on Biclust Object -> returns Biclust Object ##
+out_new <- RowTest_Fisher(result=out$Biclust,matrix=mat)
+# FisherResult output in info slot
+str(out_new@info$FisherResult)
+# FisherInfo output in info slot (comparison with original BC's)
+str(out_new@info$FisherInfo)
+
+
+## Apply RowTest_Fisher on BiBitWorkflow Object -> returns BiBitWorkflow Object ##
+out_new2 <- RowTest_Fisher(result=out,matrix=mat)
+# FisherResult output in BiBitWorkflow info element
+str(out_new2$info$FisherResult)
+# Fisher output is added to "NoiseScree" plot
+NoiseScree(result=out_new2,matrix=mat,type="Added")
 }
 }
 \author{

@@ -53,7 +53,7 @@ After locating this noise level, lower the noise level by 1. This is your automa
 A data frame containing the number of clusters and the corresponding number of row coverage, percentage of row coverage and the number of final biclusters.
 }
 \description{
-Plots number of clusters (of hierarchical tree) versus number/percentage of row coverage and number of final biclusters (see Details for more information).
+Plotting function to be used with the \code{\link{BiBitWorkflow}} output. It plots the number of clusters (of hierarchical tree) versus number/percentage of row coverage and number of final biclusters (see Details for more information).
 }
 \details{
 The graph of number of chosen tree clusters versus the final row coverage can help you to make a decision on how many clusters to choose in the hierarchical tree. 
@@ -61,7 +61,24 @@ The more clusters you choose, the smaller (albeit more similar) the patterns are
 }
 \examples{
 \dontrun{
-test
+## Prepare some data ##
+set.seed(254)
+mat <- matrix(sample(c(0,1),5000*50,replace=TRUE,prob=c(1-0.15,0.15)),
+              nrow=5000,ncol=50)
+mat[1:200,1:10] <- matrix(sample(c(0,1),200*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                          nrow=200,ncol=10)
+mat[300:399,6:15] <- matrix(sample(c(0,1),100*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                            nrow=100,ncol=10)
+mat[400:599,21:30] <- matrix(sample(c(0,1),200*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                             nrow=200,ncol=10)
+mat[700:799,29:38] <- matrix(sample(c(0,1),100*10,replace=TRUE,prob=c(1-0.9,0.9)),
+                             nrow=100,ncol=10)
+mat <- mat[sample(1:5000,5000,replace=FALSE),sample(1:50,50,replace=FALSE)]
+
+## Apply BiBitWorkflow ##
+out <- BiBitWorkflow(matrix=mat,minr=50,minc=5,noise=0.2,cut_type="number",cut_pm=10)
+# Make ClusterRowCoverage Plots
+ClusterRowCoverage(result=out,matrix=mat,maxCluster=20,noise=0.2)
 }
 }
 \author{
