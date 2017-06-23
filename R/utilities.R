@@ -1,3 +1,5 @@
+
+
 #' Finding Maximum Size Biclusters
 #' 
 #' Simple function which scans a \code{Biclust} result and returns which biclusters have maximum row, column or size (row*column).
@@ -495,3 +497,33 @@ biclust_correctdim <- function(result,matrix){
     if((nrow(matrix)!=nrow(result$Biclust@RowxNumber))|(ncol(matrix)!=ncol(result$Biclust@NumberxCol))){stop("result and matrix have incompatible dimenions",call.=FALSE)}
   }
 }
+
+#' @export
+setMethod("summary", "Biclust",
+          function(object)
+          {
+            cat("\nAn object of class",class(object),"\n\n")
+            cat("call:", deparse(object@Parameters$Call,0.75*getOption("width")),
+                sep="\n\t")
+            n<-object@Number
+            
+            if(n>1)
+            {
+              cat("\nNumber of Clusters found: ",object@Number, "\n")
+              cat("\nCluster sizes:\n")
+              
+              rowcolsizes<-rbind(colSums(object@RowxNumber[,1:n]),rowSums(object@NumberxCol[1:n,]))
+              rownames(rowcolsizes)<-c("Number of Rows:","Number of Columns:")
+              colnames(rowcolsizes)<-paste("BC", 1:n)
+              #print.default(format(rowcolsizes, print.gap = 2, quote = FALSE))
+              print(rowcolsizes)
+            }
+            else
+            {
+              if(n==1) cat("\nThere was one cluster found with\n ",sum(object@RowxNumber[,1]), "Rows and ", sum(object@NumberxCol), "columns")
+              if(n==0) cat("\nThere was no cluster found")
+            }
+            cat("\n\n")
+            
+            
+          })

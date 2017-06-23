@@ -7,7 +7,7 @@
 
 #' @importFrom foreign write.arff read.arff
 #' @import biclust
-#' @importFrom methods new
+#' @importFrom methods new setGeneric setMethod
 #' @importFrom utils read.table write.table combn txtProgressBar setTxtProgressBar capture.output
 #' @importFrom viridis viridis
 #' @importFrom cluster agnes clusGap maxSE
@@ -16,7 +16,10 @@
 #' @importFrom lattice levelplot
 #' @importFrom grDevices dev.new dev.off pdf png
 #' @importFrom graphics abline barplot image legend par plot points text
+#' @importFrom randomcoloR distinctColorPalette
 NULL
+
+
 
 
 

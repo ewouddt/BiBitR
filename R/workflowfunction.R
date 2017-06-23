@@ -11,9 +11,7 @@
 # TO DO:
 # - complete documentation
 # -  add memory option to bibit/bibit2/bibit3
-# - Add barplot of noise in columns of BC
 # - Make CompareResultJI more efficient for single result
-
 
 
 
@@ -185,6 +183,7 @@ BiBitWorkflow <- function(matrix,minr=2,minc=2,
   # 3. Hierarchical tree, colored with cut
   # 4. Noise Scree Plot
   # 5. image plot of final sim_mat (both JI)
+  if(!all(plots%in%c(1:5))){stop("plots should be part of c(1,2,3,4,5)")}
   if(length(plot.type)!=1){stop("plot.type should be of length 1",call.=FALSE)}
   if(!(plot.type %in% c("device","file","other"))){stop("plot.type should be 'device', 'file' or 'other'",call.=FALSE)}
   FIRSTPLOT <- TRUE
@@ -935,12 +934,13 @@ ClusterRowCoverage <- function(result,matrix,maxCluster=20,
                                verbose=TRUE,
                                plot.type="device",filename="RowCoverage"){
   
+  if(!all(plots%in%c(1:3))){stop("plots should be part of c(1,2,3)")}
   if(length(plot.type)!=1){stop("plot.type should be of length 1",call.=FALSE)}
   if(!(plot.type %in% c("device","file","other"))){stop("plot.type should be 'device', 'file' or 'other'",call.=FALSE)}
   FIRSTPLOT <- TRUE
   
   ## PARAMETER CHECKS ##
-  if(class(result)!="BiBitWorkflow"){stop("result needs to be of class 'Biclust' or 'BiBitWorkflow'")}  
+  if(class(result)!="BiBitWorkflow"){stop("result needs to be of class 'BiBitWorkflow'")}  
   if(class(matrix)!="matrix"){stop("matrix parameter should contain a matrix object",call.=FALSE)}
   if(!identical(as.numeric(as.vector(matrix)),as.numeric(as.logical(matrix)))){stop("matrix is not a binary matrix!",call.=FALSE)}
   if(is.null(rownames(matrix))){rownames(matrix) <- paste0("Row",c(1:nrow(matrix)))}
@@ -1591,9 +1591,9 @@ workflow_duplicate_BC <- function(result,verbose=TRUE){
   # In order to quickly delete duplicates, BC row and column memberships are encoded to 16bit words first
   nrow_data <- nrow(result@RowxNumber)
   ncol_data <- ncol(result@NumberxCol)
+  nblockscol <- ceiling(ncol_data/16)
   
   nblocksrow <- ceiling(nrow_data/16)
-  nblockscol <- ceiling(ncol_data/16)
   
   
   decBC_mat <- matrix(NA,nrow=result@Number,ncol=nblocksrow+nblockscol,dimnames=list(colnames(result@RowxNumber),NULL))
@@ -1818,15 +1818,43 @@ workflow_alternativeclusterselect <- function(result){
 
 
 
-
-ColInfo <- function(result,matrix,plot=TRUE,plot.type="device",filename="ColInfo"){
+#' @title Column Info of Biclusters
+#' @description Function that returns which column labels are part of the pattern derived from the biclusters.
+#' Additionally, a biclustmember plot and a general barplot of the column labels (retrieved from the biclusters) can be drawn.
+#' @author Ewoud De Troyer
+#' @export
+#' @param result A Biclust Object.
+#' @param matrix Accompanying data matrix which was used to obtain \code{result}.
+#' @param plots Which plots to draw:
+#' \enumerate{
+#' \item Barplot of number of appearances of column labels in bicluster results.
+#' \item Biclustmember plot of BC results (see \code{\link[biclust]{biclustmember}}).
+#' }
+#' @param plot.type Output Type
+#' \itemize{
+#' \item \code{"device"}: All plots are outputted to new R graphics devices (default).
+#' \item \code{"file"}: All plots are saved in external files. Plots are joint together in a single \code{.pdf} file.
+#' \item \code{"other"}: All plots are outputted to the current graphics device, but will overwrite each other. Use this if you want to include one or more plots in a sweave/knitr file or if you want to export a single plot by your own chosen format.
+#' }
+#' @param filename Base filename (with/without directory) for the plots if \code{plot.type="file"} (default=\code{"RowCoverage"}).
+#' @return A list object (length equal to number of Biclusters) in which vectors of column labels are saved.
+#' @examples \dontrun{
+#' data <- matrix(sample(c(0,1),100*100,replace=TRUE,prob=c(0.9,0.1)),nrow=100,ncol=100)
+#' data[1:10,1:10] <- 1 # BC1
+#' data[11:20,11:20] <- 1 # BC2
+#' data[21:30,21:30] <- 1 # BC3
+#' data <- data[sample(1:nrow(data),nrow(data)),sample(1:ncol(data),ncol(data))]
+#' result <- bibit(data,minr=5,minc=5)
+#' ColInfo(result=result,matrix=data)
+#' }
+ColInfo <- function(result,matrix,plots=c(1,2),plot.type="device",filename="ColInfo"){
   if(length(plot.type)!=1){stop("plot.type should be of length 1",call.=FALSE)}
-  if(!(plot.type %in% c("device","file"))){stop("plot.type should be 'device' or 'file'",call.=FALSE)}
+  if(!(plot.type %in% c("device","file","other"))){stop("plot.type should be 'device', 'file' or 'other'",call.=FALSE)}
+  if(!all(plots%in%c(1:2))){stop("plots should be part of c(1,2)")}
   FIRSTPLOT <- TRUE
 
   ## PARAMETER CHECKS ##
   if(class(matrix)!="matrix"){stop("matrix parameter should contain a matrix object",call.=FALSE)}
-  if(!identical(as.numeric(as.vector(matrix)),as.numeric(as.logical(matrix)))){stop("matrix is not a binary matrix!",call.=FALSE)}
   if(class(result)!="Biclust"){stop("result needs to be of class 'Biclust'")}  
   if(is.null(rownames(matrix))){rownames(matrix) <- paste0("Row",c(1:nrow(matrix)))}
   if(is.null(colnames(matrix))){colnames(matrix) <- paste0("Col",c(1:ncol(matrix)))}
@@ -1838,7 +1866,7 @@ ColInfo <- function(result,matrix,plot=TRUE,plot.type="device",filename="ColInfo
   })
   names(out) <- paste0("BC",1:length(out))
   
-  if(plot){
+  if(1 %in% plots){
     if(plot.type=="device"){
       dev.new()
     }else if(plot.type=="file" & FIRSTPLOT){
@@ -1847,8 +1875,8 @@ ColInfo <- function(result,matrix,plot=TRUE,plot.type="device",filename="ColInfo
     }
     tab <- table(unlist(out))
     barplot(tab[order(tab,decreasing=TRUE)],las=2,col="lightblue",main="Number Column Appearances")
-  
-    
+  }
+  if(2 %in% plots){  
     if(plot.type=="device"){
       dev.new()
     }else if(plot.type=="file" & FIRSTPLOT){
@@ -1859,13 +1887,84 @@ ColInfo <- function(result,matrix,plot=TRUE,plot.type="device",filename="ColInfo
     biclustmember(x=matrix,bicResult=result,color=col_t)
     # col_t <- diverge_hcl(101, h = c(0, 130))
     
-    legend(c(0.1,1.2),c("0","1"),col=c(col_t[1],col_t[length(col_t)]),xpd=TRUE,bty="n",pch=15)
-  
-    
-    if(plot.type=="file"){dev.off()}
+    legend(c(0.1,1.2),c(as.character(min(matrix)),as.character(max(matrix))),col=c(col_t[1],col_t[length(col_t)]),xpd=TRUE,bty="n",pch=15)
   }
+  if(plot.type=="file" & length(plots)>0){dev.off()}
+  
+  
   
   return(out)
+}
+
+
+
+
+#' @title Barplots of Column Noise for Biclusters
+#' @description Draws barplots of column noise of chosen biclusters. This plot can be helpful in determining which column label is often zero in noisy biclusters.
+#' @author Ewoud De Troyer
+#' @export
+#' @param result A Biclust Object.
+#' @param matrix Accompanying binary data matrix which was used to obtain \code{result}.
+#' @param BC Numeric vector to select of which BC's a column noise bar plot should be drawn.
+#' @param plot.type Output Type
+#' \itemize{
+#' \item \code{"device"}: All plots are outputted to new R graphics devices (default).
+#' \item \code{"file"}: All plots are saved in external files. Plots are joint together in a single \code{.pdf} file.
+#' \item \code{"other"}: All plots are outputted to the current graphics device, but will overwrite each other. Use this if you want to include one or more plots in a sweave/knitr file or if you want to export a single plot by your own chosen format.
+#' }
+#' @param filename Base filename (with/without directory) for the plots if \code{plot.type="file"} (default=\code{"RowCoverage"}).
+#' @return NULL
+#' @examples \dontrun{
+#' data <- matrix(sample(c(0,1),100*100,replace=TRUE,prob=c(0.9,0.1)),nrow=100,ncol=100)
+#' data[1:10,1:10] <- 1 # BC1
+#' data[11:20,11:20] <- 1 # BC2
+#' data[21:30,21:30] <- 1 # BC3
+#' data <- data[sample(1:nrow(data),nrow(data)),sample(1:ncol(data),ncol(data))]
+#' result <- bibit2(data,minr=5,minc=5,noise=1)
+#' ColNoiseBC(result=result,matrix=data,BC=1:3)
+#' }
+ColNoiseBC <- function(result,matrix,BC=1:result@Number,
+                       plot.type="device",filename="ColNoise"){
+  
+ if(length(plot.type)!=1){stop("plot.type should be of length 1",call.=FALSE)}
+  if(!(plot.type %in% c("device","file","other"))){stop("plot.type should be 'device', 'file' or 'other'",call.=FALSE)}
+  FIRSTPLOT <- TRUE
+  
+  
+  ## PARAMETER CHECKS ##
+  if(class(result)!="Biclust"){stop("result needs to be of class 'Biclust'")}  
+  if(class(matrix)!="matrix"){stop("matrix parameter should contain a matrix object",call.=FALSE)}
+  if(!identical(as.numeric(as.vector(matrix)),as.numeric(as.logical(matrix)))){stop("matrix is not a binary matrix!",call.=FALSE)}
+  if(is.null(rownames(matrix))){rownames(matrix) <- paste0("Row",c(1:nrow(matrix)))}
+  if(is.null(colnames(matrix))){colnames(matrix) <- paste0("Col",c(1:ncol(matrix)))}
+  biclust_correctdim(result=result,matrix=matrix)
+  
+  if(!(class(BC)=="numeric" | class(BC)=="integer")){stop("BC should be a numeric vector")}
+  if(any(BC<0)){stop("BC cannot be negative")}
+  if(any(BC>result@Number)){stop(paste0("BC contains a unavailable BC. The biclustering result only has ",result@Number," BC's"))}
+  
+  
+  for(i in BC){
+    temp <- 1-apply(matrix[result@RowxNumber[,i],result@NumberxCol[i,]],MARGIN=2,FUN=sum)/sum(result@RowxNumber[,i])
+    
+    if(plot.type=="device"){
+      dev.new()
+    }else if(plot.type=="file" & FIRSTPLOT){
+      pdf(paste0(filename,".pdf"))
+      FIRSTPLOT <- FALSE
+    }
+    
+    set.seed(1)
+    col <- distinctColorPalette(length(temp))
+    
+    barplot(temp,ylim=c(0,1),main=paste0("Column Noise - BC ",i),xlab="",ylab="Noise Percentage",col=col,las=2,cex.names=0.8)
+    
+  }
+  
+  if(plot.type=="file"){
+    dev.off()
+  }
+  return(NULL)
 }
 
 
