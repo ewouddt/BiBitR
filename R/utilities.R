@@ -498,10 +498,13 @@ biclust_correctdim <- function(result,matrix){
   }
 }
 
-#' @export
+
+
+
 #' @title Summary Method for Biclust Class
 #' @description Summary Method for Biclust Class
 #' @param object Biclust S4 Object
+#' @export
 setMethod("summary", "Biclust",
           function(object)
           {
@@ -530,3 +533,6 @@ setMethod("summary", "Biclust",
             
             
           })
+
+
+
