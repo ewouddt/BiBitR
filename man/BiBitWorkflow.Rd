@@ -9,7 +9,7 @@ BiBitWorkflow(matrix, minr = 2, minc = 2, similarity_type = "col",
   cut_type = "gap", cut_pm = "Tibs2001SEmax", gap_B = 500,
   gap_maxK = 50, noise = 0.1, noise_select = 0, plots = c(3:5),
   BCresult = NULL, simmatresult = NULL, treeresult = NULL,
-  plot.type = "device", filename = "BiBitWorkflow")
+  plot.type = "device", filename = "BiBitWorkflow", verbose = TRUE)
 }
 \arguments{
 \item{matrix}{The binary input matrix.}
@@ -89,6 +89,8 @@ If the title of one of the subplots is red, then this means that the Bicluster g
 }}
 
 \item{filename}{Base filename (with/without directory) for the plots if \code{plot.type="file"} (default=\code{"BiBitWorkflow"}).}
+
+\item{verbose}{Logical value if progress of workflow should be printed.}
 }
 \value{
 A BiBitWorkflow S3 List Object with 3 slots:

@@ -98,6 +98,7 @@
 #' \item \code{"other"}: All plots are outputted to the current graphics device, but will overwrite each other. Use this if you want to include one or more plots in a sweave/knitr file or if you want to export a single plot by your own chosen format.
 #' }
 #' @param filename Base filename (with/without directory) for the plots if \code{plot.type="file"} (default=\code{"BiBitWorkflow"}).
+#' @param verbose Logical value if progress of workflow should be printed.
 #' 
 #' @return A BiBitWorkflow S3 List Object with 3 slots:
 #' \itemize{
@@ -175,7 +176,8 @@ BiBitWorkflow <- function(matrix,minr=2,minc=2,
                                       noise=0.1,noise_select=0,
                                       plots=c(3:5),
                                       BCresult=NULL,simmatresult=NULL,treeresult=NULL,
-                                      plot.type="device",filename="BiBitWorkflow"){
+                                      plot.type="device",filename="BiBitWorkflow",
+                                      verbose=TRUE){
   
   # Plots #
   # 1. image plot of sim_mat
@@ -245,52 +247,60 @@ BiBitWorkflow <- function(matrix,minr=2,minc=2,
   }
   
   
-    
+  if(verbose){  
   ## APPLY ORIGINAL BIBIT WITHOUT NOISE ##
   cat("STEP 1: ORIGINAL BIBIT WITHOUT NOISE\n")
   cat("------------------------------------\n\n")
+  }
   
   if(!is.null(BCresult)){
     if(class(BCresult)!="Biclust"){stop("BCresult is not a Biclust class object")}
     result1 <- BCresult
-    cat("BCresult was used\n")
+    if(verbose){cat("BCresult was used\n")}
   }else{
-    result1 <- bibit(matrix,minr=minr,minc=minc)
+    if(verbose){
+      result1 <- bibit(matrix,minr=minr,minc=minc)
+    }else{
+      temp <- capture.output({
+        result1 <- bibit(matrix,minr=minr,minc=minc)
+      })
+    }
   }
-  cat("Total BC's found: ",result1@Number,"\n\n")
+  if(verbose){cat("Total BC's found: ",result1@Number,"\n\n")}
   
   if(result1@Number<=1){stop("Not enough BC's to continue analysis.")}
   
   
   ## COMPUTE INITIAL SIMILARITY MATRIX ##
+  if(verbose){
   cat("STEP 2: SIMILARITY MATRIX\n")
   cat("-------------------------\n\n")
-  
+  }
   
   if(!is.null(simmatresult)){
-    cat("simmatresult was used\n")
+    if(verbose){cat("simmatresult was used\n")}
     sim_mat <- simmatresult
   }else{
-    cat(paste0("Compute Jaccard Index Similarity (",similarity_type,") of ",result1@Number," BC's\n"))
-    sim_mat <- workflow_simmat(result1,type=similarity_type)
+    if(verbose){cat(paste0("Compute Jaccard Index Similarity (",similarity_type,") of ",result1@Number," BC's\n"))}
+    sim_mat <- workflow_simmat(result1,type=similarity_type,verbose=verbose)
   }
   
 
  
   # Plot 1 #
   if(1%in%plots){
-    cat("Plot 1: Image Plot of Similarity Matrix\n")
+    if(verbose){cat("Plot 1: Image Plot of Similarity Matrix\n")}
     if(plot.type=="device"){dev.new()}else if(plot.type=="file"){png(paste0(filename,"_plot1.png"))}
     image(sim_mat,col=viridis(256),axes=FALSE,main=paste0("Heatmap of JI Similarity (",similarity_type,")"))
     if(plot.type=="file"){dev.off()}
   }
   
 
-  
+  if(verbose){
   cat("\nSTEP 3: AGGLOMERATIVE HIERARCHICAL CLUSTERING TREE\n")
   cat("-------------------------------------------------\n")
   cat("Link =",link," |  Function =",func,"\n\n")
-  
+  }
   
   
   # Create tree based on parameters
@@ -313,7 +323,7 @@ BiBitWorkflow <- function(matrix,minr=2,minc=2,
   
   # Plot 2 #
   if(2 %in% plots){
-    cat("Plot 2: Image plot of Similarity Matrix, reordered with clustering tree\n\n")
+    if(verbose){cat("Plot 2: Image plot of Similarity Matrix, reordered with clustering tree\n\n")}
     if(plot.type=="device"){dev.new()}else if(plot.type=="file"){png(paste0(filename,"_plot2.png"))}
     heatmap((sim_mat),Rowv=as.dendrogram(tree_init),col=viridis(256),main=paste0("Heatmap of JI Similarity (",similarity_type,") - Reordered"))
     if(plot.type=="file"){dev.off()}
@@ -323,7 +333,7 @@ BiBitWorkflow <- function(matrix,minr=2,minc=2,
   ## COMPUTE GAP STATISTIC ##
   gap_out <- NULL
   if(cut_type=="gap"){
-    cat("Computing Gap Statistic...\n")
+    if(verbose){cat("Computing Gap Statistic...\n")}
     
     
     if(similarity_type=="col"){
@@ -335,14 +345,14 @@ BiBitWorkflow <- function(matrix,minr=2,minc=2,
 
     if(result1@Number<50){gap_maxK <- result1@Number-1}
     
-    gap_stat <- clusGap((gapdata),B=gap_B,K.max=gap_maxK,FUNcluster=function(x,k){list(cluster=cutree((tree_init),k=k))})
+    gap_stat <- clusGap((gapdata),verbose=verbose,B=gap_B,K.max=gap_maxK,FUNcluster=function(x,k){list(cluster=cutree((tree_init),k=k))})
     
     # gap_stat <- cluster::clusGap(as.data.frame(result1@NumberxCol),B=gap_B,K.max=gap_maxK,FUNcluster=function(x,k){list(cluster=cutree(tree_init,k=k))})
     
     
     number <- maxSE(gap_stat$Tab[, 3], gap_stat$Tab[,4], cut_pm)
     
-    cat(paste0("Gap Statistic '",cut_pm,"': ",number," clusters\n"))
+    if(verbose){cat(paste0("Gap Statistic '",cut_pm,"': ",number," clusters\n"))}
     gap_out <- sapply(gap_options,FUN=function(x){maxSE(gap_stat$Tab[, 3], gap_stat$Tab[,4], x)})
     
     
@@ -379,7 +389,7 @@ BiBitWorkflow <- function(matrix,minr=2,minc=2,
       cut_txt <- paste0(round(h_temp,2)," distance")
     }
     
-    cat("Plot 3:",paste0("Dendrogram - ",func," - ",link," link (",cut_txt,")"),"\n")
+    if(verbose){cat("Plot 3:",paste0("Dendrogram - ",func," - ",link," link (",cut_txt,")"),"\n")}
     if(plot.type=="device"){
       dev.new()
     }else if(plot.type=="file" & FIRSTPLOT){
@@ -394,9 +404,11 @@ BiBitWorkflow <- function(matrix,minr=2,minc=2,
   
   
   ## MERGE BICLUSTERS ##
+  if(verbose){
   cat("\nSTEP 4: MERGING BICLUSTERS BASED ON HIERARCHICAL TREE\n")
   cat("------------------------------------------------------\n\n")
-  result2 <- workflow_mergeBC(result=result1,tree=tree_init,JI=JI,number=number)
+  }
+  result2 <- workflow_mergeBC(result=result1,tree=tree_init,JI=JI,number=number,verbose=verbose)
   
   # Remove BC.Merge to put it in general info + make a list of original patterns
   BC.Merge <- result2@info$BC.Merge
@@ -422,15 +434,17 @@ BiBitWorkflow <- function(matrix,minr=2,minc=2,
   
   
   ## APPLY PATTERN BIBIT/ROWGROWING ##
+  if(verbose){
   cat("\nSTEP 5: GROWING ROWS FOR MERGED PATTERNS\n")
   cat("----------------------------------------\n\n")
+  }
   
-  result3 <-  workflow_UpdateBiclust_RowNoise(result=result2,matrix=matrix, noise=result2@info$Noise.Threshold,removeBC=TRUE,NoisexNumber=NoisexNumber)
+  result3 <-  workflow_UpdateBiclust_RowNoise(result=result2,matrix=matrix, noise=result2@info$Noise.Threshold,removeBC=TRUE,NoisexNumber=NoisexNumber,verbose=verbose)
   
   
   # Plot 4 #
   if(4 %in% plots){
-    cat("\n Plot 4: Noise Scree Plot of Merged Patterns\n")
+    if(verbose){cat("\n Plot 4: Noise Scree Plot of Merged Patterns\n")}
     
     # Plot with added number of rows & Plot with total number of rows
     tempdim <- sqrt(result2@Number)
@@ -482,7 +496,7 @@ BiBitWorkflow <- function(matrix,minr=2,minc=2,
   
   # Plot 5 #
   if(5 %in% plots){
-    cat("\nPlot 5: Image Plot of Similarity Matrix of Final Result\n")
+    if(verbose){cat("\nPlot 5: Image Plot of Similarity Matrix of Final Result\n")}
     if(plot.type=="device"){
       dev.new()
     }else if(plot.type=="file" & FIRSTPLOT){
@@ -1386,7 +1400,7 @@ UpdateBiclust_RowNoise <- function(result,matrix, noise=0.1,noise_select=0,remov
 
 
 
-workflow_UpdateBiclust_RowNoise <- function(result,matrix, noise,removeBC=FALSE,NoisexNumber){
+workflow_UpdateBiclust_RowNoise <- function(result,matrix, noise,removeBC=FALSE,NoisexNumber,verbose=TRUE){
   
   ## PARAMETER CHECKS ##
   if(class(matrix)!="matrix"){stop("matrix parameter should contain a matrix object",call.=FALSE)}
@@ -1424,7 +1438,7 @@ workflow_UpdateBiclust_RowNoise <- function(result,matrix, noise,removeBC=FALSE,
     
     current_patterns <- current_patterns[-index]
     
-    cat("Number of biclusters deleted due to no rows fitting the pattern with allowed noise:",length(index),"\n")
+    if(verbose){cat("Number of biclusters deleted due to no rows fitting the pattern with allowed noise:",length(index),"\n")}
   }
   
   # Save current patterns temporarily in the result (this vector might decrease)
@@ -1432,11 +1446,11 @@ workflow_UpdateBiclust_RowNoise <- function(result,matrix, noise,removeBC=FALSE,
   
   
   if(removeBC & result@Number>1){
-    result <- workflow_duplicate_BC(result)
+    result <- workflow_duplicate_BC(result,verbose=verbose)
   }
   
   if(removeBC | (sum(BC.delete)>0)){
-    cat("Total final BC's:",result@Number,"\n")
+    if(verbose){cat("Total final BC's:",result@Number,"\n")}
   }
   
   # Saving deleted patterns and remove temporary current patterns
@@ -1482,16 +1496,18 @@ workflow_simmat <- function(result,type="both",verbose=TRUE){
   return(mat_placeholder)
 }
 
-workflow_mergeBC <- function(result,tree,JI=NULL,number=NULL){
+workflow_mergeBC <- function(result,tree,JI=NULL,number=NULL,verbose=TRUE){
 
   
   
   cut <- cutree(tree,h=(1-JI),k=number)
   new_number <- length(unique(cut))
   
+  if(verbose){
   cat("Number of BC before merge:",result@Number,"\n")
   cat("Number of BC after merge:",new_number,"\n")
   cat("Merging...")
+  }
   
   out <- new("Biclust",Parameters=result@Parameters,
              RowxNumber=matrix(FALSE,nrow=nrow(result@RowxNumber),ncol=new_number),
