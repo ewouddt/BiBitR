@@ -482,7 +482,7 @@ BiBitWorkflow <- function(matrix,minr=2,minc=2,
   
   # Plot 5 #
   if(5 %in% plots){
-    cat("\nPlot 5: Image Plot of Similarity Matrix of Final Result")
+    cat("\nPlot 5: Image Plot of Similarity Matrix of Final Result\n")
     if(plot.type=="device"){
       dev.new()
     }else if(plot.type=="file" & FIRSTPLOT){
