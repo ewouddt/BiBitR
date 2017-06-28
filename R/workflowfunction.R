@@ -306,7 +306,7 @@ BiBitWorkflow <- function(matrix,minr=2,minc=2,
   # Create tree based on parameters
   if(!is.null(treeresult)){
     tree_init <- treeresult
-    cat("treeresult was used\n")
+    if(verbose){cat("treeresult was used\n")}
     
   }else{
     if(func=="hclust"){
@@ -1528,7 +1528,7 @@ workflow_mergeBC <- function(result,tree,JI=NULL,number=NULL,verbose=TRUE){
   }
   
   
-  cat("DONE\n")
+  if(verbose){cat("DONE\n")}
   return(out)
 }
 
