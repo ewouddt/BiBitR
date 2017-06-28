@@ -491,7 +491,11 @@ BiBitWorkflow <- function(matrix,minr=2,minc=2,
   }  
   
   # Similarity Matrix of final result
-  sim_mat_result3 <- workflow_simmat(result3,type="both",verbose=FALSE)
+  if(result3@Number>1){
+    sim_mat_result3 <- workflow_simmat(result3,type="both",verbose=FALSE)
+  }else{
+    sim_mat_result3 <- matrix(1,nrow=1,ncol=1)
+  }
   rownames(sim_mat_result3) <- colnames(sim_mat_result3) <- paste0("BC",1:nrow(sim_mat_result3))
   
   # Plot 5 #
