@@ -889,7 +889,7 @@ NoiseScree <- function(result,matrix,type=c("Added","Total"),pattern=NULL,noise_
 # More clusters: more row coverage, smaller patterns ; Less clusters: less coverage, larger patterns (depending on initial bibit result)
 
 #' @title Row Coverage Plots
-#' @description Plotting function to be used with the \code{\link{BiBitWorkflow}} output. It plots the number of clusters (of hierarchical tree) versus number/percentage of row coverage and number of final biclusters (see Details for more information).
+#' @description Plotting function to be used with the \code{\link{BiBitWorkflow}} output. It plots the number of clusters (of the hierarchical tree) versus the number/percentage of row coverage and number of final biclusters (see Details for more information).
 #' @param result A BiBitWorkflow Object.
 #' @param matrix Accompanying binary data matrix which was used to obtain \code{result}.
 #' @param maxCluster Maximum number of clusters to cut the tree at (default=20).

@@ -53,7 +53,7 @@ After locating this noise level, lower the noise level by 1. This is your automa
 A data frame containing the number of clusters and the corresponding number of row coverage, percentage of row coverage and the number of final biclusters.
 }
 \description{
-Plotting function to be used with the \code{\link{BiBitWorkflow}} output. It plots the number of clusters (of hierarchical tree) versus number/percentage of row coverage and number of final biclusters (see Details for more information).
+Plotting function to be used with the \code{\link{BiBitWorkflow}} output. It plots the number of clusters (of the hierarchical tree) versus the number/percentage of row coverage and number of final biclusters (see Details for more information).
 }
 \details{
 The graph of number of chosen tree clusters versus the final row coverage can help you to make a decision on how many clusters to choose in the hierarchical tree. 
