@@ -30,7 +30,7 @@
 #' 
 #' }
 MaxBC <- function(result,top=1){
-  if(class(result)!="Biclust"){stop("result needs to be of class 'Biclust'")}
+  if(class(result)!="Biclust" | class(result)!="iBBiG"){stop("result needs to be of class 'Biclust'")}
   
   rowsum <- colSums(result@RowxNumber)
   colsum <- rowSums(result@NumberxCol)
