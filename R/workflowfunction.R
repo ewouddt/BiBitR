@@ -1131,9 +1131,9 @@ ClusterRowCoverage <- function(result,matrix,maxCluster=20,
 #' }
 CompareResultJI <- function(BCresult1,BCresult2=NULL,type="both",plot=TRUE){
   
-  if(class(BCresult1)!="Biclust" | class(BCresult1)!="iBBiG"){stop("BCresult1 is not a Biclust object")}
+  if(class(BCresult1)!="Biclust" & class(BCresult1)!="iBBiG"){stop("BCresult1 is not a Biclust object")}
   if(!is.null(BCresult2)){
-    if(class(BCresult2)!="Biclust" | class(BCresult2)!="iBBiG"){stop("BCresult2 is not a Biclust object")}
+    if(class(BCresult2)!="Biclust" & class(BCresult2)!="iBBiG"){stop("BCresult2 is not a Biclust object")}
     name_temp <- "Result2_BC"
   }else{
     BCresult2 <- BCresult1
