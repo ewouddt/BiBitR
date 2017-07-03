@@ -99,6 +99,7 @@
 #' }
 #' @param filename Base filename (with/without directory) for the plots if \code{plot.type="file"} (default=\code{"BiBitWorkflow"}).
 #' @param verbose Logical value if progress of workflow should be printed.
+#' @param Xmx Set maximum Java heap size (default=\code{"1000M"}) to be used in BiBit \emph{Step 1}.
 #' 
 #' @return A BiBitWorkflow S3 List Object with 3 slots:
 #' \itemize{
@@ -177,7 +178,7 @@ BiBitWorkflow <- function(matrix,minr=2,minc=2,
                                       plots=c(3:5),
                                       BCresult=NULL,simmatresult=NULL,treeresult=NULL,
                                       plot.type="device",filename="BiBitWorkflow",
-                                      verbose=TRUE){
+                                      verbose=TRUE,Xmx="1000M"){
   
   # Plots #
   # 1. image plot of sim_mat
@@ -259,10 +260,10 @@ BiBitWorkflow <- function(matrix,minr=2,minc=2,
     if(verbose){cat("BCresult was used\n")}
   }else{
     if(verbose){
-      result1 <- bibit(matrix,minr=minr,minc=minc)
+      result1 <- bibit(matrix,minr=minr,minc=minc,Xmx=Xmx)
     }else{
       temp <- capture.output({
-        result1 <- bibit(matrix,minr=minr,minc=minc)
+        result1 <- bibit(matrix,minr=minr,minc=minc,Xmx=Xmx)
       })
     }
   }
