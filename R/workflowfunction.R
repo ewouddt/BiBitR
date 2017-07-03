@@ -10,7 +10,7 @@
 
 # TO DO:
 # - complete documentation
-# -  add memory option to bibit/bibit2/bibit3
+# -  add memory option to bibit/bibit2/bibit3   (set maximum Java heap size)
 # - Make CompareResultJI more efficient for single result
 
 

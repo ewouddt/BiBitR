@@ -7,7 +7,8 @@
 bibit3(matrix = NULL, minr = 1, minc = 2, noise = 0,
   pattern_matrix = NULL, subpattern = TRUE, pattern_combinations = FALSE,
   arff_row_col = NULL, extend_columns = "none", extend_mincol = 1,
-  extend_limitcol = 1, extend_noise = noise, extend_contained = FALSE)
+  extend_limitcol = 1, extend_noise = noise, extend_contained = FALSE,
+  Xmx = "1000M")
 }
 \arguments{
 \item{matrix}{The binary input matrix.}
@@ -44,6 +45,8 @@ More specifically \code{zeros_allowed = ceiling(noise * columnsize)}. For exampl
 \item{extend_noise}{\emph{Column Extension Parameter}\cr The maximum allowed noise (in each row) when extending the columns of the bicluster. Can take the same as the \code{noise} parameter. By default this is the same value as \code{noise}.}
 
 \item{extend_contained}{\emph{Column Extension Parameter}\cr Logical value if extended results should be checked if they contain each other (and deleted if this is the case). Default = \code{FALSE}. This can be a lengthy procedure for a large amount of biclusters (>1000).}
+
+\item{Xmx}{Set maximum Java heap size (default=\code{"1000M"}).}
 }
 \value{
 A S3 list object, \code{"bibit3"} in which each element (apart from the last one) corresponds with a provided pattern or combination thereof. \cr

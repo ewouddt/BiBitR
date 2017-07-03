@@ -52,6 +52,7 @@ NULL
 #' (\emph{Example}: \code{output_path="...\\\\out\\\\bibitresult"})
 #' \cr
 #' (\emph{Description Output}: The following information about every bicluster generated will be printed in the output file: number of rows, number of columns, name of rows and name of columns.
+#' @param Xmx Set maximum Java heap size (default=\code{"1000M"}).
 #' @return A Biclust S4 Class object.
 #' 
 #' @examples 
@@ -65,7 +66,7 @@ NULL
 #' result
 #' MaxBC(result)
 #' }
-bibit <- function(matrix=NULL,minr=2,minc=2,arff_row_col=NULL,output_path=NULL){
+bibit <- function(matrix=NULL,minr=2,minc=2,arff_row_col=NULL,output_path=NULL,Xmx="1000M"){
   
   pm <- match.call()
   
@@ -147,8 +148,9 @@ bibit <- function(matrix=NULL,minr=2,minc=2,arff_row_col=NULL,output_path=NULL){
   
   # BiBit.jar location needs to be standardized for package location! # .libPaths()
   # command <- paste("java -jar -Xmx1000M",javaloc,bibitdata_path,"1",minr,minc,bibitoutput_path,bibitrows_path,bibitcols_path,1)
-  command <- paste("java -jar -Xmx1000M",paste0("\"",javaloc,"\""),paste0("\"",bibitdata_path,"\""),"1",minr,minc,paste0("\"",bibitoutput_path,"\""),paste0("\"",bibitrows_path,"\""),paste0("\"",bibitcols_path,"\""),1)
-  
+  # command <- paste("java -jar -Xmx1000M",paste0("\"",javaloc,"\""),paste0("\"",bibitdata_path,"\""),"1",minr,minc,paste0("\"",bibitoutput_path,"\""),paste0("\"",bibitrows_path,"\""),paste0("\"",bibitcols_path,"\""),1)
+  command <- paste("java -jar",paste0("-Xmx",Xmx),paste0("\"",javaloc,"\""),paste0("\"",bibitdata_path,"\""),"1",minr,minc,paste0("\"",bibitoutput_path,"\""),paste0("\"",bibitrows_path,"\""),paste0("\"",bibitcols_path,"\""),1)
+
   system(command)
   
   time_bibit <- round(proc.time()['elapsed']/60-time_bibit,2)
@@ -344,7 +346,7 @@ bibit2biclust <- function(data,resultpath,arff_row_col){
 #' 
 #' @param extend_noise \emph{Column Extension Parameter}\cr The maximum allowed noise (in each row) when extending the columns of the bicluster. Can take the same as the \code{noise} parameter. By default this is the same value as \code{noise}.
 #' @param extend_contained \emph{Column Extension Parameter}\cr Logical value if extended results should be checked if they contain each other (and deleted if this is the case). Default = \code{FALSE}. This can be a lengthy procedure for a large amount of biclusters (>1000).
-#' 
+#' @param Xmx Set maximum Java heap size (default=\code{"1000M"}).
 #' 
 #' @return A Biclust S4 Class object.
 #' 
@@ -365,8 +367,8 @@ bibit2biclust <- function(data,resultpath,arff_row_col){
 #' MaxBC(result2,top=2)
 #' }
 bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_path=NULL,
-                   extend_columns="none",extend_mincol=1,extend_limitcol=1,extend_noise=noise,extend_contained=FALSE
-                   ){
+                   extend_columns="none",extend_mincol=1,extend_limitcol=1,extend_noise=noise,extend_contained=FALSE,
+                   Xmx="1000M"){
   
   pm <- match.call()
   
@@ -460,7 +462,7 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
   # javaloc <- gsub("/","\\\\",javaloc)
   
   # BiBit.jar location needs to be standardized for package location! # .libPaths()
-  command <- paste("java -jar -Xmx1000M",paste0("\"",javaloc,"\""),paste0("\"",bibitdata_path,"\""),"1",minr,minc,paste0("\"",bibitoutput_path,"\""),paste0("\"",bibitrows_path,"\""),paste0("\"",bibitcols_path,"\""),1,paste0(" ",noise))
+  command <- paste("java -jar",paste0("-Xmx",Xmx),paste0("\"",javaloc,"\""),paste0("\"",bibitdata_path,"\""),"1",minr,minc,paste0("\"",bibitoutput_path,"\""),paste0("\"",bibitrows_path,"\""),paste0("\"",bibitcols_path,"\""),1,paste0(" ",noise))
   # cat(command,"\n")
   
   ## APPLY JAVA ALGORITHM OF BIBIT ##
@@ -590,6 +592,7 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
 #' 
 #' @param extend_noise \emph{Column Extension Parameter}\cr The maximum allowed noise (in each row) when extending the columns of the bicluster. Can take the same as the \code{noise} parameter. By default this is the same value as \code{noise}.
 #' @param extend_contained \emph{Column Extension Parameter}\cr Logical value if extended results should be checked if they contain each other (and deleted if this is the case). Default = \code{FALSE}. This can be a lengthy procedure for a large amount of biclusters (>1000).
+#' @param Xmx Set maximum Java heap size (default=\code{"1000M"}).
 #' 
 #' @return A S3 list object, \code{"bibit3"} in which each element (apart from the last one) corresponds with a provided pattern or combination thereof. \cr
 #' Each element is a list containing:
@@ -629,7 +632,8 @@ bibit2 <- function(matrix=NULL,minr=2,minc=2,noise=0,arff_row_col=NULL,output_pa
 #' bibit3_patternBC(result=out,matrix=data,pattern=c(1),type=c("full","sub","ext"),BC=c(1,2))
 #' }
 bibit3 <- function(matrix=NULL,minr=1,minc=2,noise=0,pattern_matrix=NULL,subpattern=TRUE,pattern_combinations=FALSE,arff_row_col=NULL,
-                   extend_columns="none",extend_mincol=1,extend_limitcol=1,extend_noise=noise,extend_contained=FALSE){
+                   extend_columns="none",extend_mincol=1,extend_limitcol=1,extend_noise=noise,extend_contained=FALSE,
+                   Xmx="1000M"){
   
   pm <- match.call()
   minr <- minr + 2
@@ -833,7 +837,7 @@ bibit3 <- function(matrix=NULL,minr=1,minc=2,noise=0,pattern_matrix=NULL,subpatt
     subpat <- ifelse(subpattern,1,0)
     
     # BiBit.jar location needs to be standardized for package location! # .libPaths()
-    command <- paste("java -jar -Xmx1000M",paste0("\"",javaloc,"\""),paste0("\"",bibitdata_path,"\""),"1",minr,minc,paste0("\"",bibitoutput_path,"\""),paste0("\"",bibitrows_path,"\""),paste0("\"",bibitcols_path,"\""),1,paste0(" ",noise),paste0(" ",subpat))
+    command <- paste("java -jar",paste0("-Xmx",Xmx),paste0("\"",javaloc,"\""),paste0("\"",bibitdata_path,"\""),"1",minr,minc,paste0("\"",bibitoutput_path,"\""),paste0("\"",bibitrows_path,"\""),paste0("\"",bibitcols_path,"\""),1,paste0(" ",noise),paste0(" ",subpat))
     # cat(command,"\n")
     system(command)
     

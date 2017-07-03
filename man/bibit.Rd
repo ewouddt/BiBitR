@@ -5,7 +5,7 @@
 \title{The BiBit Algorithm}
 \usage{
 bibit(matrix = NULL, minr = 2, minc = 2, arff_row_col = NULL,
-  output_path = NULL)
+  output_path = NULL, Xmx = "1000M")
 }
 \arguments{
 \item{matrix}{The binary input matrix.}
@@ -23,6 +23,8 @@ bibit(matrix = NULL, minr = 2, minc = 2, arff_row_col = NULL,
 (\emph{Example}: \code{output_path="...\\\\out\\\\bibitresult"})
 \cr
 (\emph{Description Output}: The following information about every bicluster generated will be printed in the output file: number of rows, number of columns, name of rows and name of columns.}
+
+\item{Xmx}{Set maximum Java heap size (default=\code{"1000M"}).}
 }
 \value{
 A Biclust S4 Class object.
