@@ -1136,59 +1136,78 @@ CompareResultJI <- function(BCresult1,BCresult2=NULL,type="both",plot=TRUE){
   if(!is.null(BCresult2)){
     if(class(BCresult2)!="Biclust" & class(BCresult2)!="iBBiG"){stop("BCresult2 is not a Biclust object")}
     name_temp <- "Result2_BC"
+    single <- FALSE
   }else{
-    BCresult2 <- BCresult1
+    single <- TRUE
+    # BCresult2 <- BCresult1
     name_temp <- "Result1_BC"
   }
   if(length(type)>1){stop("type can only have 1 argument")}
   if(!(type%in%c("both","row","col"))){stop("type incorrect")}
   
-  simmat <- matrix(0,nrow=BCresult1@Number,ncol=BCresult2@Number,dimnames=list(paste0("Result1_BC",1:BCresult1@Number),paste0(name_temp,1:BCresult2@Number)))
   
-  if(type=="both"){
-    main.temp <- "JI"
-    for(i in 1:nrow(simmat)){
-      for(j in 1:ncol(simmat)){
-        row_contain_temp <- sum(which(BCresult1@RowxNumber[,i])%in%which(BCresult2@RowxNumber[,j]))
-        col_contain_temp <- sum(which(BCresult1@NumberxCol[i,])%in%which(BCresult2@NumberxCol[j,]))
-        m1 <- sum(BCresult1@RowxNumber[,i])*sum(BCresult1@NumberxCol[i,])
-        m2 <- sum(BCresult2@RowxNumber[,j])*sum(BCresult2@NumberxCol[j,])
-        m12 <- m1+m2-row_contain_temp*col_contain_temp
-        simmat[i,j] <- (m1+m2-(m12))/(m12)
+  
+  if(single){
+    
+    simmat <- workflow_simmat(result=BCresult1 ,type=type,verbose=FALSE)
+    rownames(simmat) <- colnames(simmat) <-  paste0("Result1_BC",1:BCresult1@Number)
+
+    main.temp <- switch(type,both="JI",row="Row",col="Column")
+    
+  }else{
+    
+    simmat <- matrix(0,nrow=BCresult1@Number,ncol=BCresult2@Number,dimnames=list(paste0("Result1_BC",1:BCresult1@Number),paste0(name_temp,1:BCresult2@Number)))
+    
+    if(type=="both"){
+      main.temp <- "JI"
+      for(i in 1:nrow(simmat)){
+        for(j in 1:ncol(simmat)){
+          row_contain_temp <- sum(which(BCresult1@RowxNumber[,i])%in%which(BCresult2@RowxNumber[,j]))
+          col_contain_temp <- sum(which(BCresult1@NumberxCol[i,])%in%which(BCresult2@NumberxCol[j,]))
+          m1 <- sum(BCresult1@RowxNumber[,i])*sum(BCresult1@NumberxCol[i,])
+          m2 <- sum(BCresult2@RowxNumber[,j])*sum(BCresult2@NumberxCol[j,])
+          m12 <- m1+m2-row_contain_temp*col_contain_temp
+          simmat[i,j] <- (m1+m2-(m12))/(m12)
+        }
+      }
+    }else if(type=="row"){
+      main.temp <- "Row"
+      for(i in 1:nrow(simmat)){
+        for(j in 1:ncol(simmat)){
+          x1 <- BCresult1@RowxNumber[,i]
+          x2 <- BCresult2@RowxNumber[,j]
+          m1 <- sum(x1)
+          m2 <- sum(x2)
+          m12 <- sum(as.logical(x1+x2))
+          simmat[i,j] <- (m1+m2-m12)/m12
+        }
+      }
+    }else if(type=="col"){
+      main.temp <- "Col"
+      for(i in 1:nrow(simmat)){
+        for(j in 1:ncol(simmat)){
+          x1 <- BCresult1@NumberxCol[i,]
+          x2 <- BCresult2@NumberxCol[j,]
+          m1 <- sum(x1)
+          m2 <- sum(x2)
+          m12 <- sum(as.logical(x1+x2))
+          simmat[i,j] <- (m1+m2-m12)/m12
+        }
       }
     }
-  }else if(type=="row"){
-    main.temp <- "Row"
-    for(i in 1:nrow(simmat)){
-      for(j in 1:ncol(simmat)){
-        x1 <- BCresult1@RowxNumber[,i]
-        x2 <- BCresult2@RowxNumber[,j]
-        m1 <- sum(x1)
-        m2 <- sum(x2)
-        m12 <- sum(as.logical(x1+x2))
-        simmat[i,j] <- (m1+m2-m12)/m12
-      }
-    }
-  }else if(type=="col"){
-    main.temp <- "Col"
-    for(i in 1:nrow(simmat)){
-      for(j in 1:ncol(simmat)){
-        x1 <- BCresult1@NumberxCol[i,]
-        x2 <- BCresult2@NumberxCol[j,]
-        m1 <- sum(x1)
-        m2 <- sum(x2)
-        m12 <- sum(as.logical(x1+x2))
-        simmat[i,j] <- (m1+m2-m12)/m12
-      }
-    }
+    
   }
   
+  # Compute max for each row/columns
   MaxSim1 <- apply(simmat,MARGIN=1,FUN=max)
   MaxSim2 <- apply(simmat,MARGIN=2,FUN=max)
   
   simmat_temp <- simmat
   rownames(simmat_temp) <- paste0(rownames(simmat_temp)," (",as.character(round(MaxSim1,2)),")")
   colnames(simmat_temp) <- paste0(colnames(simmat_temp)," (",as.character(round(MaxSim2,2)),")")
+  
+  
+
   
   if(plot){
     # image(t(simmat),col=viridis(256),main=paste0("Comparison ",main.temp," Matrix"),axes=FALSE)
