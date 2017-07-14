@@ -17,6 +17,7 @@
 #' @importFrom grDevices dev.new dev.off pdf png
 #' @importFrom graphics abline barplot image legend par plot points text
 #' @importFrom randomcoloR distinctColorPalette
+#' @importFrom parallel detectCores
 NULL
 
 

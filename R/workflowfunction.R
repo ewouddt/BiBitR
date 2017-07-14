@@ -1099,6 +1099,8 @@ ClusterRowCoverage <- function(result,matrix,maxCluster=20,
 #' @param BCresult2 A second S4 Biclust object to which \code{BCresult1} should be compared. (default=\code{NULL})
 #' @param type Of which dimension should the Jaccard Index be computed? Can be \code{"row"}, \code{"col"} or \code{"both"} (default).
 #' @param plot Logical value if plot should be outputted (default=\code{TRUE}).
+#' @param MultiCores Logical value parallelisation should be used to compute the JI similarity matrix.
+#' @param MultiCores.number Number of cores to be used. By default total number of physical cores.
 #' @author Ewoud De Troyer
 #' @export
 #' @return A list containing
@@ -1130,7 +1132,7 @@ ClusterRowCoverage <- function(result,matrix,maxCluster=20,
 #' Sim12 <- CompareResultJI(BCresult1=result1,BCresult2=result2,type="both",plot=FALSE)
 #' str(Sim12)
 #' }
-CompareResultJI <- function(BCresult1,BCresult2=NULL,type="both",plot=TRUE){
+CompareResultJI <- function(BCresult1,BCresult2=NULL,type="both",plot=TRUE, MultiCores=FALSE, MultiCores.number=detectCores(logical=FALSE)){
   
   if(class(BCresult1)!="Biclust" & class(BCresult1)!="iBBiG"){stop("BCresult1 is not a Biclust object")}
   if(!is.null(BCresult2)){
@@ -1146,66 +1148,80 @@ CompareResultJI <- function(BCresult1,BCresult2=NULL,type="both",plot=TRUE){
   if(!(type%in%c("both","row","col"))){stop("type incorrect")}
   
   
+  if(MultiCores){
+    if(MultiCores.number==1){
+      warning("Only 1 core was chosen, no parallelisation will be used.")
+      MultiCores <- FALSE
+    }
+  }
   
-  if(single){
+  if(!MultiCores){
+    ## SIMILARITY WITH 1 CORE ##
     
-    simmat <- workflow_simmat(result=BCresult1 ,type=type,verbose=FALSE)
-    rownames(simmat) <- colnames(simmat) <-  paste0("Result1_BC",1:BCresult1@Number)
-
-    main.temp <- switch(type,both="JI",row="Row",col="Column")
+    if(single){
+      
+      simmat <- workflow_simmat(result=BCresult1 ,type=type,verbose=FALSE)
+      rownames(simmat) <- colnames(simmat) <-  paste0("Result1_BC",1:BCresult1@Number)
+      
+      main.temp <- switch(type,both="JI",row="Row",col="Column")
+      
+    }else{
+      
+      simmat <- matrix(0,nrow=BCresult1@Number,ncol=BCresult2@Number,dimnames=list(paste0("Result1_BC",1:BCresult1@Number),paste0(name_temp,1:BCresult2@Number)))
+      
+      if(type=="both"){
+        main.temp <- "JI"
+        for(i in 1:nrow(simmat)){
+          for(j in 1:ncol(simmat)){
+            row_contain_temp <- sum(which(BCresult1@RowxNumber[,i])%in%which(BCresult2@RowxNumber[,j]))
+            col_contain_temp <- sum(which(BCresult1@NumberxCol[i,])%in%which(BCresult2@NumberxCol[j,]))
+            m1 <- sum(BCresult1@RowxNumber[,i])*sum(BCresult1@NumberxCol[i,])
+            m2 <- sum(BCresult2@RowxNumber[,j])*sum(BCresult2@NumberxCol[j,])
+            m12 <- m1+m2-row_contain_temp*col_contain_temp
+            simmat[i,j] <- (m1+m2-(m12))/(m12)
+          }
+        }
+      }else if(type=="row"){
+        main.temp <- "Row"
+        for(i in 1:nrow(simmat)){
+          for(j in 1:ncol(simmat)){
+            x1 <- BCresult1@RowxNumber[,i]
+            x2 <- BCresult2@RowxNumber[,j]
+            m1 <- sum(x1)
+            m2 <- sum(x2)
+            m12 <- sum(as.logical(x1+x2))
+            simmat[i,j] <- (m1+m2-m12)/m12
+          }
+        }
+      }else if(type=="col"){
+        main.temp <- "Col"
+        for(i in 1:nrow(simmat)){
+          for(j in 1:ncol(simmat)){
+            x1 <- BCresult1@NumberxCol[i,]
+            x2 <- BCresult2@NumberxCol[j,]
+            m1 <- sum(x1)
+            m2 <- sum(x2)
+            m12 <- sum(as.logical(x1+x2))
+            simmat[i,j] <- (m1+m2-m12)/m12
+          }
+        }
+      }
+      
+    }
+    
+    # Compute max for each row/columns
+    MaxSim1 <- apply(simmat,MARGIN=1,FUN=max)
+    MaxSim2 <- apply(simmat,MARGIN=2,FUN=max)
+    
+    simmat_temp <- simmat
+    rownames(simmat_temp) <- paste0(rownames(simmat_temp)," (",as.character(round(MaxSim1,2)),")")
+    colnames(simmat_temp) <- paste0(colnames(simmat_temp)," (",as.character(round(MaxSim2,2)),")")
     
   }else{
     
-    simmat <- matrix(0,nrow=BCresult1@Number,ncol=BCresult2@Number,dimnames=list(paste0("Result1_BC",1:BCresult1@Number),paste0(name_temp,1:BCresult2@Number)))
-    
-    if(type=="both"){
-      main.temp <- "JI"
-      for(i in 1:nrow(simmat)){
-        for(j in 1:ncol(simmat)){
-          row_contain_temp <- sum(which(BCresult1@RowxNumber[,i])%in%which(BCresult2@RowxNumber[,j]))
-          col_contain_temp <- sum(which(BCresult1@NumberxCol[i,])%in%which(BCresult2@NumberxCol[j,]))
-          m1 <- sum(BCresult1@RowxNumber[,i])*sum(BCresult1@NumberxCol[i,])
-          m2 <- sum(BCresult2@RowxNumber[,j])*sum(BCresult2@NumberxCol[j,])
-          m12 <- m1+m2-row_contain_temp*col_contain_temp
-          simmat[i,j] <- (m1+m2-(m12))/(m12)
-        }
-      }
-    }else if(type=="row"){
-      main.temp <- "Row"
-      for(i in 1:nrow(simmat)){
-        for(j in 1:ncol(simmat)){
-          x1 <- BCresult1@RowxNumber[,i]
-          x2 <- BCresult2@RowxNumber[,j]
-          m1 <- sum(x1)
-          m2 <- sum(x2)
-          m12 <- sum(as.logical(x1+x2))
-          simmat[i,j] <- (m1+m2-m12)/m12
-        }
-      }
-    }else if(type=="col"){
-      main.temp <- "Col"
-      for(i in 1:nrow(simmat)){
-        for(j in 1:ncol(simmat)){
-          x1 <- BCresult1@NumberxCol[i,]
-          x2 <- BCresult2@NumberxCol[j,]
-          m1 <- sum(x1)
-          m2 <- sum(x2)
-          m12 <- sum(as.logical(x1+x2))
-          simmat[i,j] <- (m1+m2-m12)/m12
-        }
-      }
-    }
-    
   }
   
-  # Compute max for each row/columns
-  MaxSim1 <- apply(simmat,MARGIN=1,FUN=max)
-  MaxSim2 <- apply(simmat,MARGIN=2,FUN=max)
-  
-  simmat_temp <- simmat
-  rownames(simmat_temp) <- paste0(rownames(simmat_temp)," (",as.character(round(MaxSim1,2)),")")
-  colnames(simmat_temp) <- paste0(colnames(simmat_temp)," (",as.character(round(MaxSim2,2)),")")
-  
+
   
 
   
