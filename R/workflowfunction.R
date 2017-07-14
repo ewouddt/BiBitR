@@ -1227,7 +1227,7 @@ CompareResultJI <- function(BCresult1,BCresult2=NULL,type="both",plot=TRUE, Mult
     # Create number of jobs (loops) equal to number of workers
     # Equally divide work over workers (different for single and 2 results)
     
-    message("Parallelisation:",MultiCores.number,"cores used")
+    message("Parallelisation: ",MultiCores.number," cores used")
     
     cl <- makeCluster(MultiCores.number)
     
@@ -1251,10 +1251,12 @@ CompareResultJI <- function(BCresult1,BCresult2=NULL,type="both",plot=TRUE, Mult
       simmat <- do.call(rbind, res)
       
     }
+    
+    
+    stopCluster(cl)
   }
   
   
-  stopCluster(cl)
 
   
 
