@@ -1247,18 +1247,34 @@ CompareResultJI <- function(BCresult1,BCresult2=NULL,type="both",plot=TRUE, Mult
       worker_rows <- splitIndices(BCresult1@Number,MultiCores.number)
       
 
-      res <- clusterApplyLB(cl, 1:MultiCores.number,fun=simmat_par_double, worker_rows=worker_rows,BCresult1=BCresult1,BCresult2=BCresult2)
+      res <- clusterApplyLB(cl, 1:MultiCores.number,fun=simmat_par_double, worker_rows=worker_rows,BCresult1=BCresult1,BCresult2=BCresult2,type=type)
       simmat <- do.call(rbind, res)
       
     }
-    
-    
     stopCluster(cl)
+    
+    # Compute max for each row/columns
+    MaxSim1 <- apply(simmat,MARGIN=1,FUN=max)
+    MaxSim2 <- apply(simmat,MARGIN=2,FUN=max)
+    
+    simmat_temp <- simmat
+    rownames(simmat_temp) <- paste0(rownames(simmat_temp)," (",as.character(round(MaxSim1,2)),")")
+    colnames(simmat_temp) <- paste0(colnames(simmat_temp)," (",as.character(round(MaxSim2,2)),")")
+    
+    if(type=="both"){
+      main.temp <- "JI"
+    }else if(type=="row"){
+      main.temp <- "Row"
+    }else if(type=="col"){
+      main.temp <- "Col"
+    }
+    
+    
   }
   
   
 
-  
+  ## NEED TO TO main.temp AGAIN
 
   
   if(plot){
