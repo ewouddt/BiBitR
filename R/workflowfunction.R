@@ -1210,14 +1210,7 @@ CompareResultJI <- function(BCresult1,BCresult2=NULL,type="both",plot=TRUE){
 
   
   if(plot){
-    # image(t(simmat),col=viridis(256),main=paste0("Comparison ",main.temp," Matrix"),axes=FALSE)
-    # axis(1,at=seq(0,1,length.out=ncol(simmat)),labels=colnames(simmat),tick=FALSE,las=2,cex.axis=0.5)
-    # axis(2,at=seq(0,1,length.out=nrow(simmat)),labels=rownames(simmat),tick=FALSE,las=2,cex.axis=0.5)
-    # axis(3,at=seq(0,1,length.out=ncol(simmat)),labels=as.character(round(MaxSim2,2)),tick=FALSE,cex.axis=0.6)
-    # axis(4,at=seq(0,1,length.out=nrow(simmat)),labels=as.character(round(MaxSim1,2)),tick=FALSE,las=2,cex.axis=0.6)
-    
     print(levelplot(t(simmat_temp),col.regions=viridis(256),main=paste0("Comparison ",main.temp," Matrix"),ylab="",xlab="",scales=list(x=list(rot=90),tck = c(1,0))))
-    
   }
   
   
