@@ -42,4 +42,3 @@ result <- bibit(data,minr=5,minc=5,
 \author{
 Ewoud De Troyer
 }
-

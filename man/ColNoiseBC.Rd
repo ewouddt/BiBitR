@@ -40,4 +40,3 @@ ColNoiseBC(result=result,matrix=data,BC=1:3)
 \author{
 Ewoud De Troyer
 }
-

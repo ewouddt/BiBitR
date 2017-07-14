@@ -38,4 +38,3 @@ MaxBC(result)
 \author{
 Ewoud De Troyer
 }
-

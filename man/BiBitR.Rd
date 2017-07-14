@@ -19,4 +19,3 @@ The BiBitR package also includes the following functions and/or workflows:
 \references{
 Domingo S. Rodriguez-Baena, Antonia J. Perez-Pulido and Jesus S. Aguilar-Ruiz (2011), "A biclustering algorithm for extracting bit-patterns from binary datasets", \emph{Bioinformatics}
 }
-

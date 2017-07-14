@@ -98,6 +98,7 @@ Of course this could result in multiple extensions for 1 bicluster if there are 
 }
 \emph{Note:} These procedures are followed by a fast check if the extensions resulted in any duplicate biclusters. If so, these are deleted from the final result.
 }
+
 \examples{
 \dontrun{
 data <- matrix(sample(c(0,1),100*100,replace=TRUE,prob=c(0.9,0.1)),nrow=100,ncol=100)
@@ -115,10 +116,9 @@ result2
 MaxBC(result2,top=2)
 }
 }
-\author{
-Ewoud De Troyer
-}
 \references{
 Domingo S. Rodriguez-Baena, Antonia J. Perez-Pulido and Jesus S. Aguilar-Ruiz (2011), "A biclustering algorithm for extracting bit-patterns from binary datasets", \emph{Bioinformatics}
 }
-
+\author{
+Ewoud De Troyer
+}

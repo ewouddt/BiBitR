@@ -117,10 +117,9 @@ out  # OR print(out) OR summary(out)
 bibit3_patternBC(result=out,matrix=data,pattern=c(1),type=c("full","sub","ext"),BC=c(1,2))
 }
 }
-\author{
-Ewoud De Troyer
-}
 \references{
 Domingo S. Rodriguez-Baena, Antonia J. Perez-Pulido and Jesus S. Aguilar-Ruiz (2011), "A biclustering algorithm for extracting bit-patterns from binary datasets", \emph{Bioinformatics}
 }
-
+\author{
+Ewoud De Troyer
+}

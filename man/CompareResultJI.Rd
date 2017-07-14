@@ -4,7 +4,8 @@
 \alias{CompareResultJI}
 \title{Compare Biclustering Results using Jaccard Index}
 \usage{
-CompareResultJI(BCresult1, BCresult2 = NULL, type = "both", plot = TRUE)
+CompareResultJI(BCresult1, BCresult2 = NULL, type = "both", plot = TRUE,
+  MultiCores = FALSE, MultiCores.number = detectCores(logical = FALSE))
 }
 \arguments{
 \item{BCresult1}{A S4 Biclust object. If only this input Biclust object is given, the biclusters of this single result will be compared.}
@@ -14,6 +15,10 @@ CompareResultJI(BCresult1, BCresult2 = NULL, type = "both", plot = TRUE)
 \item{type}{Of which dimension should the Jaccard Index be computed? Can be \code{"row"}, \code{"col"} or \code{"both"} (default).}
 
 \item{plot}{Logical value if plot should be outputted (default=\code{TRUE}).}
+
+\item{MultiCores}{Logical value parallelisation should be used to compute the JI similarity matrix.}
+
+\item{MultiCores.number}{Number of cores to be used. By default total number of physical cores.}
 }
 \value{
 A list containing
@@ -72,4 +77,3 @@ str(Sim12)
 \author{
 Ewoud De Troyer
 }
-

@@ -11,5 +11,5 @@ Description: A simple R wrapper for the Java BiBit algorithm from "A
 License: GPL-3
 Imports:
     stats,foreign,methods,utils,viridis,cluster,dendextend,lattice,grDevices,graphics,randomcoloR,biclust, parallel
-RoxygenNote: 5.0.1
+RoxygenNote: 6.0.1
 SystemRequirements: Java

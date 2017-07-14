@@ -58,4 +58,3 @@ bibit3_patternBC(result=out,matrix=data,pattern=c(1),type=c("full","sub","ext"),
 \author{
 Ewoud De Troyer
 }
-

@@ -82,4 +82,3 @@ out_new2$info$MergedNoiseThresholds # New Noise Levels
 \author{
 Ewoud De Troyer
 }
-

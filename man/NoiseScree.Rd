@@ -81,4 +81,3 @@ NoiseScree(result=out2,matrix=mat,type="Total")
 \author{
 Ewoud De Troyer
 }
-

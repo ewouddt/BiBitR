@@ -13,4 +13,3 @@
 \description{
 Summary Method for Biclust Class
 }
-

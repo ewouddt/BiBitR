@@ -89,4 +89,3 @@ NoiseScree(result=out_new2,matrix=mat,type="Added")
 \author{
 Ewoud De Troyer
 }
-

@@ -84,4 +84,3 @@ ClusterRowCoverage(result=out,matrix=mat,maxCluster=20,noise=0.2)
 \author{
 Ewoud De Troyer
 }
-

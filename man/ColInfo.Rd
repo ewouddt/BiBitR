@@ -48,4 +48,3 @@ ColInfo(result=result,matrix=data)
 \author{
 Ewoud De Troyer
 }
-

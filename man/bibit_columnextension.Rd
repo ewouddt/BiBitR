@@ -66,6 +66,7 @@ Of course this could result in multiple extensions for 1 bicluster if there are 
 }
 \emph{Note:} These procedures are followed by a fast check if the extensions resulted in any duplicate biclusters. If so, these are deleted from the final result.
 }
+
 \examples{
 \dontrun{
 
@@ -88,4 +89,3 @@ result2
 \author{
 Ewoud De Troyer
 }
-

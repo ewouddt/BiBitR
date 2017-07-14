@@ -187,4 +187,3 @@ summary(out3$Biclust)
 \author{
 Ewoud De Troyer
 }
-
