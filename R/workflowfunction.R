@@ -1137,12 +1137,12 @@ CompareResultJI <- function(BCresult1,BCresult2=NULL,type="both",plot=TRUE, Mult
   if(class(BCresult1)!="Biclust" & class(BCresult1)!="iBBiG"){stop("BCresult1 is not a Biclust object")}
   if(!is.null(BCresult2)){
     if(class(BCresult2)!="Biclust" & class(BCresult2)!="iBBiG"){stop("BCresult2 is not a Biclust object")}
-    name_temp <- "Result2_BC"
+    # name_temp <- "Result2_BC"
     single <- FALSE
   }else{
     single <- TRUE
     # BCresult2 <- BCresult1
-    name_temp <- "Result1_BC"
+    # name_temp <- "Result1_BC"
   }
   if(length(type)>1){stop("type can only have 1 argument")}
   if(!(type%in%c("both","row","col"))){stop("type incorrect")}
@@ -1156,7 +1156,9 @@ CompareResultJI <- function(BCresult1,BCresult2=NULL,type="both",plot=TRUE, Mult
   }
   
   if(!MultiCores){
+    ############################
     ## SIMILARITY WITH 1 CORE ##
+    ############################
     
     if(single){
       
@@ -1167,7 +1169,7 @@ CompareResultJI <- function(BCresult1,BCresult2=NULL,type="both",plot=TRUE, Mult
       
     }else{
       
-      simmat <- matrix(0,nrow=BCresult1@Number,ncol=BCresult2@Number,dimnames=list(paste0("Result1_BC",1:BCresult1@Number),paste0(name_temp,1:BCresult2@Number)))
+      simmat <- matrix(0,nrow=BCresult1@Number,ncol=BCresult2@Number,dimnames=list(paste0("Result1_BC",1:BCresult1@Number),paste0("Result2_BC",1:BCresult2@Number)))
       
       if(type=="both"){
         main.temp <- "JI"
@@ -1219,8 +1221,40 @@ CompareResultJI <- function(BCresult1,BCresult2=NULL,type="both",plot=TRUE, Mult
     
   }else{
     
+    ####################################
+    ## SIMILARITY WITH MULTIPLE CORES ##
+    ####################################
+    # Create number of jobs (loops) equal to number of workers
+    # Equally divide work over workers (different for single and 2 results)
+    
+    message("Parallelisation:",MultiCores.number,"cores used")
+    
+    cl <- makeCluster(MultiCores.number)
+    
+    
+    if(single){
+      # Make list of jobs (rows) to divide equally beween the workers
+      # This is done, taking the number of columns elements which need to be computed into account
+      
+      
+      
+    }else{
+      # Make list of jobs (rows) to divide equally beween the workers
+      
+      # worker_rows <- 1:BCresult1@Number
+      # worker_rows <- split(allrows,ceiling(worker_rows/(length(worker_rows)/MultiCores.number)))
+      
+      worker_rows <- splitIndices(BCresult1@Number,MultiCores.number)
+      
+
+      res <- clusterApplyLB(cl, 1:MultiCores.number,fun=simmat_par_double, worker_rows=worker_rows,BCresult1=BCresult1,BCresult2=BCresult2)
+      simmat <- do.call(rbind, res)
+      
+    }
   }
   
+  
+  stopCluster(cl)
 
   
 
