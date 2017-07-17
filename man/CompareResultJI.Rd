@@ -16,9 +16,9 @@ CompareResultJI(BCresult1, BCresult2 = NULL, type = "both", plot = TRUE,
 
 \item{plot}{Logical value if plot should be outputted (default=\code{TRUE}).}
 
-\item{MultiCores}{Logical value parallelisation should be used to compute the JI similarity matrix.}
+\item{MultiCores}{Logical value parallelisation should be used to compute the JI similarity matrix (advantageous for more than approximately 1500 Biclusters). \code{FALSE} by default.}
 
-\item{MultiCores.number}{Number of cores to be used. By default total number of physical cores.}
+\item{MultiCores.number}{Number of cores to be used for \code{MultiCores=TRUE}. By default total number of physical cores.}
 }
 \value{
 A list containing

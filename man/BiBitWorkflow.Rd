@@ -10,7 +10,8 @@ BiBitWorkflow(matrix, minr = 2, minc = 2, similarity_type = "col",
   gap_maxK = 50, noise = 0.1, noise_select = 0, plots = c(3:5),
   BCresult = NULL, simmatresult = NULL, treeresult = NULL,
   plot.type = "device", filename = "BiBitWorkflow", verbose = TRUE,
-  Xmx = "1000M")
+  Xmx = "1000M", MultiCores = FALSE,
+  MultiCores.number = detectCores(logical = FALSE))
 }
 \arguments{
 \item{matrix}{The binary input matrix.}
@@ -94,6 +95,10 @@ If the title of one of the subplots is red, then this means that the Bicluster g
 \item{verbose}{Logical value if progress of workflow should be printed.}
 
 \item{Xmx}{Set maximum Java heap size (default=\code{"1000M"}) to be used in BiBit \emph{Step 1}.}
+
+\item{MultiCores}{Logical value parallelisation should be used to compute the JI similarity matrix in Step 2 (advantageous for more than approximately 1500 Biclusters). \code{FALSE} by default.}
+
+\item{MultiCores.number}{Number of cores to be used for \code{MultiCores=TRUE}. By default total number of physical cores.}
 }
 \value{
 A BiBitWorkflow S3 List Object with 3 slots:

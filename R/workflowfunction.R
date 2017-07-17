@@ -100,6 +100,8 @@
 #' @param filename Base filename (with/without directory) for the plots if \code{plot.type="file"} (default=\code{"BiBitWorkflow"}).
 #' @param verbose Logical value if progress of workflow should be printed.
 #' @param Xmx Set maximum Java heap size (default=\code{"1000M"}) to be used in BiBit \emph{Step 1}.
+#' @param MultiCores Logical value parallelisation should be used to compute the JI similarity matrix in Step 2 (advantageous for more than approximately 1500 Biclusters). \code{FALSE} by default.
+#' @param MultiCores.number Number of cores to be used for \code{MultiCores=TRUE}. By default total number of physical cores.
 #' 
 #' @return A BiBitWorkflow S3 List Object with 3 slots:
 #' \itemize{
@@ -178,7 +180,9 @@ BiBitWorkflow <- function(matrix,minr=2,minc=2,
                                       plots=c(3:5),
                                       BCresult=NULL,simmatresult=NULL,treeresult=NULL,
                                       plot.type="device",filename="BiBitWorkflow",
-                                      verbose=TRUE,Xmx="1000M"){
+                                      verbose=TRUE,Xmx="1000M",
+                                      MultiCores=FALSE, MultiCores.number=detectCores(logical=FALSE)
+                          ){
   
   # Plots #
   # 1. image plot of sim_mat
@@ -283,7 +287,38 @@ BiBitWorkflow <- function(matrix,minr=2,minc=2,
     sim_mat <- simmatresult
   }else{
     if(verbose){cat(paste0("Compute Jaccard Index Similarity (",similarity_type,") of ",result1@Number," BC's\n"))}
-    sim_mat <- workflow_simmat(result1,type=similarity_type,verbose=verbose)
+    
+    if(MultiCores){
+      if(MultiCores.number==1){
+        warning("Only 1 core was chosen, no parallelisation will be used.")
+        MultiCores <- FALSE
+      }
+    }
+    
+    if(!MultiCores){
+      # Similarity with One Core #
+      sim_mat <- workflow_simmat(result1,type=similarity_type,verbose=verbose)
+    }else{
+      
+      # Similarity with Multiple Cores #
+      message("Parallelisation: ",MultiCores.number," cores used")
+      cl <- makeCluster(MultiCores.number)
+      
+      nrow_chunk_prep <- matrix(c(1:result1@Number,cumsum(result1@Number - 1:result1@Number)),ncol=2)
+      split_number <- c(1:MultiCores.number)*(nrow_chunk_prep[result1@Number,2]/MultiCores.number)
+      nrow_chunk_prep[,2] <- findInterval(nrow_chunk_prep[,2],split_number,left.open=TRUE) 
+      
+      worker_rows <- split(nrow_chunk_prep[,1],nrow_chunk_prep[,2])
+      res <- clusterApplyLB(cl, 1:MultiCores.number, fun=simmat_par_single_bibitworkflow, worker_rows=worker_rows, BCresult1=result1, type=similarity_type)
+      
+      sim_mat <- do.call(rbind,res)
+      sim_mat <- sim_mat+t(sim_mat)
+      diag(sim_mat) <- 1
+      
+      stopCluster(cl)
+      
+    }
+    
   }
   
 
@@ -1099,8 +1134,8 @@ ClusterRowCoverage <- function(result,matrix,maxCluster=20,
 #' @param BCresult2 A second S4 Biclust object to which \code{BCresult1} should be compared. (default=\code{NULL})
 #' @param type Of which dimension should the Jaccard Index be computed? Can be \code{"row"}, \code{"col"} or \code{"both"} (default).
 #' @param plot Logical value if plot should be outputted (default=\code{TRUE}).
-#' @param MultiCores Logical value parallelisation should be used to compute the JI similarity matrix.
-#' @param MultiCores.number Number of cores to be used. By default total number of physical cores.
+#' @param MultiCores Logical value parallelisation should be used to compute the JI similarity matrix (advantageous for more than approximately 1500 Biclusters). \code{FALSE} by default.
+#' @param MultiCores.number Number of cores to be used for \code{MultiCores=TRUE}. By default total number of physical cores.
 #' @author Ewoud De Troyer
 #' @export
 #' @return A list containing
@@ -1234,8 +1269,18 @@ CompareResultJI <- function(BCresult1,BCresult2=NULL,type="both",plot=TRUE, Mult
     
     if(single){
       # Make list of jobs (rows) to divide equally beween the workers
-      # This is done, taking the number of columns elements which need to be computed into account
+      # Different then two results since here we only compute the half of the matrix
+
+      nrow_chunk_prep <- matrix(c(1:BCresult1@Number,cumsum(BCresult1@Number - 1:BCresult1@Number)),ncol=2)
+      split_number <- c(1:MultiCores.number)*(nrow_chunk_prep[BCresult1@Number,2]/MultiCores.number)
+      nrow_chunk_prep[,2] <- findInterval(nrow_chunk_prep[,2],split_number,left.open=TRUE) 
       
+      worker_rows <- split(nrow_chunk_prep[,1],nrow_chunk_prep[,2])
+      res <- clusterApplyLB(cl, 1:MultiCores.number, fun=simmat_par_single, worker_rows=worker_rows, BCresult1=BCresult1, type=type)
+      
+      simmat <- do.call(rbind,res)
+      simmat <- simmat+t(simmat)
+      diag(simmat) <- 1
       
       
     }else{
