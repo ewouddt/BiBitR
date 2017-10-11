@@ -2091,7 +2091,12 @@ ColNoiseBC <- function(result,matrix,BC=1:result@Number,
   
   
   for(i in BC){
-    temp <- 1-apply(matrix[result@RowxNumber[,i],result@NumberxCol[i,]],MARGIN=2,FUN=sum)/sum(result@RowxNumber[,i])
+    
+    BCdata <- matrix[result@RowxNumber[,i],result@NumberxCol[i,]]
+    
+    temp <- 1-apply(BCdata,MARGIN=2,FUN=sum)/sum(result@RowxNumber[,i])
+    
+    noise_temp <- max(ncol(BCdata) - rowSums(BCdata))
     
     if(plot.type=="device"){
       dev.new()
@@ -2103,7 +2108,8 @@ ColNoiseBC <- function(result,matrix,BC=1:result@Number,
     set.seed(1)
     col <- distinctColorPalette(length(temp))
     
-    barplot(temp,ylim=c(0,1),main=paste0("Column Noise - BC ",i),xlab="",ylab="Noise Percentage",col=col,las=2,cex.names=0.8)
+    barplot(temp,ylim=c(0,1),main=paste0("Column Noise - BC ",i," (",sum(result@RowxNumber[,i]),"x",sum(result@NumberxCol[i,]),") - Max Row Noise = ",noise_temp),
+            xlab="",ylab="Noise Percentage",col=col,las=2,cex.names=0.8)
     
   }
   

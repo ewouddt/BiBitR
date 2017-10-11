@@ -1,7 +1,7 @@
 Package: BiBitR
 Type: Package
 Title: R Wrapper for Java Implementation of BiBit
-Version: 0.4.0
+Version: 0.4.1
 Date: 2017-07-14
 Author: De Troyer Ewoud
 Maintainer: De Troyer Ewoud <ewoud.detroyer@uhasselt.be>
