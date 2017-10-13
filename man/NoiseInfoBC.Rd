@@ -19,7 +19,7 @@ NoiseInfoBC(result, matrix, plot = FALSE, plot.BC = 1:result@Number)
 A data frame containing the following variables for all BC's: Row/Column Dimension, Maximum Row Noise and how many of the rows fit with 0 noise, 1 noise,...
 }
 \description{
-Collect some info on the row noise distribution of each Bicluster of a Biclust or BiBitWorkflow (\code{$Biclust} slot) object. 
+Collect some info on the row noise distribution of each Bicluster of a Biclust object. 
 The information collected are the row and column dimension, the maximum row noise and the number of rows which 0, 1, 2,... noise.
 }
 \examples{

@@ -2121,7 +2121,7 @@ ColNoiseBC <- function(result,matrix,BC=1:result@Number,
 
 
 #' @title Noise Info for Biclusters
-#' @description Collect some info on the row noise distribution of each Bicluster of a Biclust or BiBitWorkflow (\code{$Biclust} slot) object. 
+#' @description Collect some info on the row noise distribution of each Bicluster of a Biclust object. 
 #' The information collected are the row and column dimension, the maximum row noise and the number of rows which 0, 1, 2,... noise.
 #' @author Ewoud De Troyer
 #' @export
