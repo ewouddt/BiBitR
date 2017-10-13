@@ -8,7 +8,7 @@
 #' @importFrom foreign write.arff read.arff
 #' @import biclust
 #' @importFrom methods new setGeneric setMethod
-#' @importFrom utils read.table write.table combn txtProgressBar setTxtProgressBar capture.output
+#' @importFrom utils read.table write.table combn txtProgressBar setTxtProgressBar capture.output globalVariables
 #' @importFrom viridis viridis
 #' @importFrom cluster agnes clusGap maxSE
 #' @importFrom dendextend color_branches
@@ -18,6 +18,8 @@
 #' @importFrom graphics abline barplot image legend par plot points text
 #' @importFrom randomcoloR distinctColorPalette
 #' @importFrom parallel detectCores makeCluster clusterApplyLB stopCluster splitIndices
+#' @importFrom tidyr gather
+#' @import ggplot2
 NULL
 
 

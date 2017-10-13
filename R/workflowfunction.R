@@ -2120,6 +2120,92 @@ ColNoiseBC <- function(result,matrix,BC=1:result@Number,
 }
 
 
+#' @title Noise Info for Biclusters
+#' @description Collect some info on the row noise distribution of each Bicluster of a Biclust or BiBitWorkflow (\code{$Biclust} slot) object. 
+#' The information collected are the row and column dimension, the maximum row noise and the number of rows which 0, 1, 2,... noise.
+#' @author Ewoud De Troyer
+#' @export
+#' @param result A Biclust Object.
+#' @param matrix Accompanying binary data matrix which was used to obtain \code{result}.
+#' @param plot Boolean value (default=FALSE) to create bar plots of the number of rows which have 0, 1, 2,... noise.
+#' @param plot.BC Vector for which BC's the barplots need to be created. (default = all biclusters)
+#' @return A data frame containing the following variables for all BC's: Row/Column Dimension, Maximum Row Noise and how many of the rows fit with 0 noise, 1 noise,...
+#' @examples \dontrun{
+#' data <- matrix(sample(c(0,1),100*100,replace=TRUE,prob=c(0.9,0.1)),nrow=100,ncol=100)
+#' data[1:10,1:10] <- 1 # BC1
+#' data[11:20,11:20] <- 1 # BC2
+#' data[21:30,21:30] <- 1 # BC3
+#' data <- data[sample(1:nrow(data),nrow(data)),sample(1:ncol(data),ncol(data))]
+#' result <- bibit2(data,minr=5,minc=5,noise=1)
+#' NoiseInfoBC(result=result,matrix=data)
+#' }
+NoiseInfoBC <- function(result,matrix,plot=FALSE,plot.BC=1:result@Number){
+  
+  ## PARAMETER CHECKS ##
+  if(class(result)!="Biclust"){stop("result needs to be of class 'Biclust'")}  
+  if(class(matrix)!="matrix"){stop("matrix parameter should contain a matrix object",call.=FALSE)}
+  if(!identical(as.numeric(as.vector(matrix)),as.numeric(as.logical(matrix)))){stop("matrix is not a binary matrix!",call.=FALSE)}
+  if(is.null(rownames(matrix))){rownames(matrix) <- paste0("Row",c(1:nrow(matrix)))}
+  if(is.null(colnames(matrix))){colnames(matrix) <- paste0("Col",c(1:ncol(matrix)))}
+  biclust_correctdim(result=result,matrix=matrix)
+  
+
+  
+  df1 <- data.frame(Rows=colSums(result@RowxNumber),Cols=rowSums(result@NumberxCol))
+  df <- cbind(df1,  
+              do.call(rbind,lapply(as.list(1:result@Number),FUN=function(x){
+                BC <- matrix[result@RowxNumber[,x],result@NumberxCol[x,]]
+                temp <- rowSums(BC)
+                MaxNoise <- max(ncol(BC) - temp)
+                NoNoiseRows <- sum(temp==ncol(BC))
+                df_temp <- data.frame(Noise=MaxNoise,NoiseRows0=NoNoiseRows)
+                return(df_temp)
+              }))
+  )
+  rownames(df) <- paste0("BC",1:result@Number)
+  colnames(df)[4] <- "Rows (Noise=0)"
+  
+  maxnoise <- max(df$Noise)
+  df2 <- as.data.frame(do.call(rbind,lapply(as.list(1:result@Number),FUN=function(x){
+    BC <- matrix[result@RowxNumber[,x],result@NumberxCol[x,]]
+    sapply(1:maxnoise,FUN=function(y){
+      temp <- rowSums(BC)
+      sum(temp==(ncol(BC)-y))
+    })
+  })))
+  colnames(df2) <- paste0("Rows (Noise=",1:maxnoise,")")
+  out <- cbind(df,df2)
+  
+  if(plot){
+    if(!(class(plot.BC)=="numeric" | class(plot.BC)=="integer")){stop("plot.BC should be a numeric vector")}
+    if(any(plot.BC<0)){stop("BC cannot be negative")}
+    if(any(plot.BC>result@Number)){stop(paste0("plot.BC contains a unavailable BC. The biclustering result only has ",result@Number," BC's"))}
+    
+    out2 <- out
+    out2 <- out[,-c(1,2,3)]
+    colnames(out2) <- paste0(0:(ncol(out2)-1))
+    
+    out2$BC <- paste0("BC",1:nrow(out2))
+    out2 <- out2[plot.BC,]
+    
+    gdata <- gather(out2,Noise,Rows,-BC)
+    
+    gdata$BC <- as.factor(gdata$BC)
+    gdata$BC <- factor(gdata$BC, levels=unique(gdata$BC))
+    
+    plt <- ggplot(gdata,aes(y=Rows,x=Noise,fill=Noise)) + geom_bar(stat="identity") + facet_wrap(~BC) + 
+      scale_y_continuous(breaks=seq(from=1,to=round(max(gdata$Rows),0),length.out = 4))
+    print(plt)
+  }
+  
+  return(out)
+}
+
+if(getRversion() >= "2.15.1"){
+  globalVariables(c("Noise","Rows","BC"))
+}  
+
+
 # ################
 # library(xtable)
 # summary_t <- function(result){
