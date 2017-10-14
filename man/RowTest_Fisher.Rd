@@ -22,7 +22,7 @@ RowTest_Fisher(result, matrix, p.adjust = "BH", alpha = 0.05,
 Depending on \code{result}, a \code{FisherResult} and/or \code{FisherInfo} object will be added to the \code{result} and returned (see Details).
 }
 \description{
-Accepts a Biclust or BiBitWorkflow result and applies the Fisher Exact Test for each row (see Details).
+Accepts a Biclust or BiBitWorkflow result and applies the Fisher Exact Test for each row of the data matrix(see Details).
 }
 \details{
 Extracts the patterns from either a \code{Biclust} or \code{BiBitWorkflow} object (see below). 

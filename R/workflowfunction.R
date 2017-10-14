@@ -594,7 +594,7 @@ BiBitWorkflow <- function(matrix,minr=2,minc=2,
 
 
 #' @title Apply Fisher Exact Test on Bicluster Rows
-#' @description Accepts a Biclust or BiBitWorkflow result and applies the Fisher Exact Test for each row (see Details).
+#' @description Accepts a Biclust or BiBitWorkflow result and applies the Fisher Exact Test for each row of the data matrix(see Details).
 #' @param result A Biclust or BiBitWorkflow Object.
 #' @param matrix Accompanying binary data matrix which was used to obtain \code{result}.
 #' @param p.adjust Which method to use when adjusting p-values, see \code{\link[stats]{p.adjust}} (default=\code{"BH"}).
@@ -738,6 +738,120 @@ RowTest_Fisher <- function(result,matrix,p.adjust="BH",alpha=0.05,pattern=NULL){
   }
   
 }
+
+
+#' @title Apply Fisher Exact Test on Biclusters of a Biclust object 
+#' @description Accepts a Biclust Object and computes the Fisher Exact Test of the rows and columns inside the biclusters versus the rows and columns outside. 
+#' This test gives some information on the fact if the rows or columns are uniquely active for this particular (or other similar) bicluster.
+#' The function will \strong{not} extract the column pattern and test every row of the dataset. This functionality can be found in \code{\link{RowTest_Fisher}}.
+#' @param result A Biclust Object.
+#' @param matrix Accompanying binary data matrix which was used to obtain \code{result}.
+#' @param p.adjust Which method to use when adjusting p-values, see \code{\link[stats]{p.adjust}} (default=\code{"BH"}).
+#' @param alpha Significance level (default=0.05).
+#' @param BC Numeric vector to select for which BC's the Fisher Exact Test needs to be computed. Default is all available biclusters.
+#' @author Ewoud De Troyer
+#' @export
+#' @return Returns a list with two elements:
+#' \itemize{
+#' \item \code{summary}: a data frame containing the number of rows, significant rows, adjusted significant rows, columns, significant columns and adjusted significant columns for all requested biclusters.
+#' \item \code{info}: a list with an element for each requested biclusters. Each BC list element contains two data frames (\code{row} and \code{col}) which contain the index, name, pvalue, adjusted pvalue, density of 1's inside and density of 1's outside for all the row and column members of the bicluster.
+#' }
+#' @examples 
+#' \dontrun{
+#' data <- matrix(sample(c(0,1),100*100,replace=TRUE,prob=c(0.9,0.1)),nrow=100,ncol=100)
+#' data[1:10,1:10] <- 1 # BC1
+#' data[11:20,11:20] <- 1 # BC2
+#' data[21:30,21:30] <- 1 # BC3
+#' data <- data[sample(1:nrow(data),nrow(data)),sample(1:ncol(data),ncol(data))]
+#' 
+#' result1 <- bibit2(data,minr=5,minc=5,noise=0.1)
+#' out_fisher <- ExactFisherBC(result1,data)
+#' out_fisher$summary
+#' out_fisher$info[[1]]
+#' }
+#'  
+ExactFisherBC <- function(result,matrix,p.adjust="BH",alpha=0.05,BC=1:result@Number){
+  
+  # Checks
+  if(class(result)!="Biclust"){stop("result needs to be of class 'Biclust'")}  
+  if(class(matrix)!="matrix"){stop("matrix parameter should contain a matrix object",call.=FALSE)}
+  if(!identical(as.numeric(as.vector(matrix)),as.numeric(as.logical(matrix)))){stop("matrix is not a binary matrix!",call.=FALSE)}
+  if(is.null(rownames(matrix))){rownames(matrix) <- paste0("Row",c(1:nrow(matrix)))}
+  if(is.null(colnames(matrix))){colnames(matrix) <- paste0("Col",c(1:ncol(matrix)))}
+  if(!(p.adjust %in% c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY","fdr", "none"))){stop("Incorrect p.adjust")}
+  if(length(p.adjust)!=1){stop("p.adjust needs to be of length 1")}
+  biclust_correctdim(result=result,matrix=matrix)
+  
+  if(!(class(BC)=="numeric" | class(BC)=="integer")){stop("BC should be a numeric vector")}
+  if(any(BC<0)){stop("BC cannot be negative")}
+  if(any(BC>result@Number)){stop(paste0("BC contains a unavailable BC. The biclustering result only has ",result@Number," BC's"))}
+  
+  
+  out_list <- lapply(as.list(BC),FUN=function(x){
+    
+    # Row Test
+    row_df <- do.call(rbind,lapply(as.list(which(result@RowxNumber[,x])),FUN=function(y){
+      inside <- matrix[y,result@NumberxCol[x,]]
+      outside <- matrix[y,!result@NumberxCol[x,]]
+      return(
+        data.frame(
+          InsidePerc1=sum(inside==1)/length(inside),
+          OutsidePerc1=sum(outside==1)/length(outside),
+          pval=fisher.test(matrix(c(sum(inside==1),sum(outside==1),
+                                             sum(inside==0),sum(outside==0)),nrow=2,ncol=2,byrow=TRUE))$p.value
+      ))
+    }))
+    if(p.adjust!="none"){
+      row_df$pval_adj <- p.adjust(row_df$pval,method=p.adjust)
+    }
+    temp <- row_df[,c(1,2)]
+    row_df <- row_df[,-c(1,2)]
+    row_df <- cbind(row_df,temp)
+    row_df <- cbind(data.frame(index=which(result@RowxNumber[,x]),name=rownames(matrix)[result@RowxNumber[,x]]),row_df)
+    
+    # Column Test
+    col_df <- do.call(rbind,lapply(as.list(which(result@NumberxCol[x,])),FUN=function(y){
+      inside <- matrix[result@RowxNumber[,x],y]
+      outside <- matrix[!result@RowxNumber[,x],y]
+      return(
+        data.frame(
+          InsidePerc1=sum(inside==1)/length(inside),
+          OutsidePerc1=sum(outside==1)/length(outside),
+          pval=fisher.test(matrix(c(sum(inside==1),sum(outside==1),
+                                    sum(inside==0),sum(outside==0)),nrow=2,ncol=2,byrow=TRUE))$p.value
+        ))
+    }))
+    if(p.adjust!="none"){
+      col_df$pval_adj <- p.adjust(col_df$pval,method=p.adjust)
+    }
+    temp <- col_df[,c(1,2)]
+    col_df <- col_df[,-c(1,2)]
+    col_df <- cbind(col_df,temp)
+    col_df <- cbind(data.frame(index=which(result@NumberxCol[x,]),name=colnames(matrix)[result@NumberxCol[x,]]),col_df)
+  
+    
+    return(list(row=row_df,col=col_df))  
+  })
+  names(out_list) <- paste0("BC",BC)
+  
+  out_summary <- do.call(rbind,lapply(out_list,FUN=function(x){
+     df1 <- data.frame(Row=nrow(x$row),SignRow=sum(x$row$pval<=alpha))
+     if(p.adjust!="none"){df1$SignAdjRow=sum(x$row$pval_adj<=alpha)}
+     df2 <- data.frame(Col=nrow(x$col),SignCol=sum(x$col$pval<=alpha))
+     if(p.adjust!="none"){df2$SignAdjCol=sum(x$col$pval_adj<=alpha)}
+     return(cbind(df1,df2))
+  }))
+  
+  return(list(summary=out_summary,info=out_list))
+  # Output: 
+  # # list: BC Element:
+  #           $row: df of Index, Name, pval, adjpval, InsidePerc1,OutsidePerc1
+  #           $col
+  # # df summary: BC x c(Row,SignRow,SignAdjRow,Col,SignCOl,SignAdjCol)
+
+  
+}
+
 
 
 # NOTE: REMEMBER TO LINK EARLIER BACK TO THIS FUNCTION!!! (in noise_select)
@@ -2051,7 +2165,7 @@ ColInfo <- function(result,matrix,plots=c(1,2),plot.type="device",filename="ColI
 #' @export
 #' @param result A Biclust Object.
 #' @param matrix Accompanying binary data matrix which was used to obtain \code{result}.
-#' @param BC Numeric vector to select of which BC's a column noise bar plot should be drawn.
+#' @param BC Numeric vector to select of which BC's a column noise bar plot should be drawn. Default is all available biclusters.
 #' @param plot.type Output Type
 #' \itemize{
 #' \item \code{"device"}: All plots are outputted to new R graphics devices (default).

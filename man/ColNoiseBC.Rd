@@ -12,7 +12,7 @@ ColNoiseBC(result, matrix, BC = 1:result@Number, plot.type = "device",
 
 \item{matrix}{Accompanying binary data matrix which was used to obtain \code{result}.}
 
-\item{BC}{Numeric vector to select of which BC's a column noise bar plot should be drawn.}
+\item{BC}{Numeric vector to select of which BC's a column noise bar plot should be drawn. Default is all available biclusters.}
 
 \item{plot.type}{Output Type
 \itemize{
