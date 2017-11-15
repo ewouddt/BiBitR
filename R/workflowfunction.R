@@ -1437,7 +1437,12 @@ CompareResultJI <- function(BCresult1,BCresult2=NULL,type="both",plot=TRUE, Mult
 
   
   if(plot){
-    print(levelplot(t(simmat_temp),col.regions=viridis(256),main=paste0("Comparison ",main.temp," Matrix"),ylab="",xlab="",scales=list(x=list(rot=90),tck = c(1,0))))
+    print(levelplot(t(simmat_temp),col.regions=viridis(256),
+                    main=paste0("Comparison ",main.temp," Matrix"),ylab="",xlab="",
+                    at=seq(0, 1, length=255),
+                    colorkey=list( at=seq(0, 1, length=255),col=viridis(256)),
+                    scales=list(x=list(rot=90),tck = c(1,0))))
+  
   }
   
   
