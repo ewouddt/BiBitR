@@ -2315,6 +2315,43 @@ NoiseInfoBC <- function(result,matrix,plot=FALSE,plot.BC=1:result@Number){
   return(out)
 }
 
+
+
+
+BCInfo <- function(result,matrix){
+  df1 <- data.frame(Rows=colSums(result@RowxNumber),Cols=rowSums(result@NumberxCol))
+  df <- cbind(df1,  
+              do.call(rbind,lapply(as.list(1:result@Number),FUN=function(x){
+                BC <- matrix[result@RowxNumber[,x],result@NumberxCol[x,]]
+                temp <- rowSums(BC)
+                MaxNoise <- max(ncol(BC) - temp)
+                NoNoiseRows <- sum(temp==ncol(BC))
+                df_temp <- data.frame(MaxNoise=MaxNoise,NoiseRows0=NoNoiseRows)
+                return(df_temp)
+              }))
+  )
+  rownames(df) <- paste0("BC",1:result@Number)
+  
+  maxnoise <- max(df$MaxNoise)
+  df2 <- as.data.frame(do.call(rbind,lapply(as.list(1:result@Number),FUN=function(x){
+    BC <- matrix[result@RowxNumber[,x],result@NumberxCol[x,]]
+    sapply(1:maxnoise,FUN=function(y){
+      temp <- rowSums(BC)
+      sum(temp==(ncol(BC)-y))
+    })
+  })))
+  colnames(df2) <- paste0("NoiseRows",1:maxnoise)
+  
+  return(cbind(df,df2))
+}
+
+
+
+
+
+
+
+
 if(getRversion() >= "2.15.1"){
   globalVariables(c("Noise","Rows","BC"))
 }  
