@@ -2787,7 +2787,7 @@ biclustmember_bin <- function (bicResult, x, cl_label = "", which = NA, main = "
 
 
 if(getRversion() >= "2.15.1"){
-  globalVariables(c("Noise","Rows","BC"))
+  globalVariables(c("Noise","Rows","BC","var","Significant"))
 }  
 
 

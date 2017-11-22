@@ -12,10 +12,10 @@
 #' @importFrom viridis viridis
 #' @importFrom cluster agnes clusGap maxSE
 #' @importFrom dendextend color_branches
-#' @importFrom stats hclust as.hclust cutree as.dendrogram as.dist fisher.test heatmap lm
+#' @importFrom stats hclust as.hclust cutree as.dendrogram as.dist fisher.test heatmap lm chisq.test t.test
 #' @importFrom lattice levelplot
 #' @importFrom grDevices dev.new dev.off pdf png
-#' @importFrom graphics abline barplot image legend par plot points text
+#' @importFrom graphics abline barplot image legend par plot points text axis plot.new rect title
 #' @importFrom randomcoloR distinctColorPalette
 #' @importFrom parallel detectCores makeCluster clusterApplyLB stopCluster splitIndices
 #' @importFrom tidyr gather
