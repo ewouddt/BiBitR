@@ -2367,7 +2367,7 @@ BCInfo <- function(result,matrix){
 
 
 
-
+#... are for pdf()
 BCVariableInfo <- function(result,info,BC=1:result@Number,type="row",sign=FALSE,sign.factor.test="chisq",sign.alpha=0.05,sign.input=NULL,
                            matrix=NULL,noise=NULL,
                            plot=TRUE,plot.save=FALSE,plot.print=TRUE,plot.pdf=FALSE,filename="BCVariableInfo",...){
@@ -2428,8 +2428,7 @@ BCVariableInfo <- function(result,info,BC=1:result@Number,type="row",sign=FALSE,
     }
   }
   
-  # BCVariableTest <- function(result,info,BC=1:result@Number,type="row",pairwise=TRUE,factor.test="chisq",alpha=0.05){
-  
+
   BCrowdim <- colSums(result@RowxNumber)
   BCcoldim <- rowSums(result@NumberxCol)
   rowdim <- nrow(result@RowxNumber)
@@ -2599,7 +2598,9 @@ BCVariableInfo <- function(result,info,BC=1:result@Number,type="row",sign=FALSE,
 } 
 
 # Returns unadjusted p-values -> do we need to adjust? (if so for number of BC's or number of vars?)
-BCVariableTest <- function(result,info,BC=1:result@Number,type="row",pairwise=TRUE,factor.test="chisq",alpha=0.05,...){
+# ... are for chisq.test and fisher.test options
+BCVariableTest <- function(result,info,BC=1:result@Number,type="row",pairwise=TRUE,pairwise.overlap="remove",
+                           factor.test="chisq",alpha=0.05,...){
   
   # CHECK PARAMETERS
   if(class(result)!="Biclust" ){stop("result needs to be of class 'Biclust'")}  
@@ -2610,7 +2611,8 @@ BCVariableTest <- function(result,info,BC=1:result@Number,type="row",pairwise=TR
   if(length(type)!=1){stop("type needs to be of length 1")}
   if(!(factor.test %in% c("chisq","fisher"))){stop("type needs to be \"chisq\" or \"fisher\"")}
   if(length(factor.test)!=1){stop("factor.test needs to be of length 1")}
-  
+  if(!(pairwise.overlap %in% c("remove","keep"))){stop("type needs to be \"remove\" or \"keep\"")}
+  if(length(pairwise.overlap)!=1){stop("pairwise.overlap needs to be of length 1")}
   
   if(nrow(info)!=switch(type,row=nrow(result@RowxNumber),col=ncol(result@NumberxCol))){stop("Incorrect number of rows in info parameter.")}
   
@@ -2648,7 +2650,19 @@ BCVariableTest <- function(result,info,BC=1:result@Number,type="row",pairwise=TR
     rownames(pvalues) <- paste0("BC",pvalues[,1],"_BC",pvalues[,2])
     
     pvalues <- cbind(pvalues,do.call(rbind,lapply(as.list(1:nrow(pvalues)),FUN=function(x){
-      return(test_var(rows1=which(result[,pvalues[x,1]]),rows2=which(result[,pvalues[x,2]]),info=info,factor.test = factor.test,...))
+      rows1 <- which(result[,pvalues[x,1]])
+      rows2 <- which(result[,pvalues[x,2]])
+      
+      if(pairwise.overlap=="remove"){
+        rows12 <- intersect(rows1,rows2)
+        if(length(rows12)>0){
+          rows1 <- setdiff(rows1,rows12)
+          rows2 <- setdiff(rows2,rows12)
+        }
+      }
+      
+      
+      return(test_var(rows1=rows1,rows2=rows2,info=info,factor.test = factor.test,...))
     })))
     pvalues <- as.data.frame(pvalues)
     sign <- pvalues
