@@ -4,8 +4,8 @@
 \alias{ClusterRowCoverage}
 \title{Row Coverage Plots}
 \usage{
-ClusterRowCoverage(result, matrix, maxCluster = 20, noise = 0.1,
-  noise_select = 0, plots = c(1:3), verbose = TRUE,
+ClusterRowCoverage(result, matrix, maxCluster = 20, rangeCluster = NULL,
+  noise = 0.1, noise_select = 0, plots = c(1:3), verbose = TRUE,
   plot.type = "device", filename = "RowCoverage")
 }
 \arguments{
@@ -14,6 +14,8 @@ ClusterRowCoverage(result, matrix, maxCluster = 20, noise = 0.1,
 \item{matrix}{Accompanying binary data matrix which was used to obtain \code{result}.}
 
 \item{maxCluster}{Maximum number of clusters to cut the tree at (default=20).}
+
+\item{rangeCluster}{Instead of providing a maximum with \code{maxCluster}, a vector of number of clusters can also be provided (default=\code{NULL}). This option will override the \code{maxCluster} parameter.}
 
 \item{noise}{The allowed noise level when growing the rows on the merged patterns after cutting the tree. (default=\code{0.1}, namely allow 10\% noise.)
 \itemize{

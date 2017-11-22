@@ -9,11 +9,9 @@
 
 
 # TO DO:
-# - complete documentation
-# -  add memory option to bibit/bibit2/bibit3   (set maximum Java heap size)
-# - Make CompareResultJI more efficient for single result
-
-
+# - add documentation and export: BCVariableInfo and BCVariableTest
+#     - still needs testing: type="col" and noise=0, 1, 2,...
+# - Autochoice of Rowcoverage + ylim 
 
 
 
@@ -611,7 +609,7 @@ BiBitWorkflow <- function(matrix,minr=2,minc=2,
 #' Using the column patterns of the Biclust result, all rows are tested using the Fisher Exact Test. 
 #' Afterwards the following 2 objects are added to the \code{info} slot of the Biclust object:
 #' \itemize{
-#' \item \code{FisherResult}: A list object (one element for each pattern) of data frames (Number of Rows \eqn{\times} 6) which contain the names of the rows (\code{Names}), the noise level of the row inside the pattern (\code{Noise}), the signal percentage inside the pattern (\code{InsidePerc1}), the signal percentage outside the pattern (\code{OutsidePerc1}), the p-value of the Fisher Exact Test (\code{Fisher_pvalue}) and the adjusted p-value of the Fisher Exact Test (\code{Fisher_pvalue_adj}).
+#' \item \code{FisherResult}: A list object (one element for each pattern) of data frames (Number of Rows x 6) which contain the names of the rows (\code{Names}), the noise level of the row inside the pattern (\code{Noise}), the signal percentage inside the pattern (\code{InsidePerc1}), the signal percentage outside the pattern (\code{OutsidePerc1}), the p-value of the Fisher Exact Test (\code{Fisher_pvalue}) and the adjusted p-value of the Fisher Exact Test (\code{Fisher_pvalue_adj}).
 #' \item \code{FisherInfo}: Info object which contains a comparison of the current row membership for each pattern with a 'new' row membership based on the significant rows (from the Fisher Exact Test) for each pattern.
 #' It is a list object (one element for each pattern) of lists (6 elements). These list objects per pattern contain the number of new, removed and identical rows (\code{NewRows}, \code{RemovedRows}, \code{SameRows}) when comparing the significant rows with the original row membership (as well as their indices (\code{NewRows_index}, \code{RemovedRows_index})). The \code{MaxNoise} element contains the maximum noise of all Fisher significant rows. 
 #' } 
@@ -1043,6 +1041,7 @@ NoiseScree <- function(result,matrix,type=c("Added","Total"),pattern=NULL,noise_
 #' @param result A BiBitWorkflow Object.
 #' @param matrix Accompanying binary data matrix which was used to obtain \code{result}.
 #' @param maxCluster Maximum number of clusters to cut the tree at (default=20).
+#' @param rangeCluster Instead of providing a maximum with \code{maxCluster}, a vector of number of clusters can also be provided (default=\code{NULL}). This option will override the \code{maxCluster} parameter.
 #' @param noise The allowed noise level when growing the rows on the merged patterns after cutting the tree. (default=\code{0.1}, namely allow 10\% noise.)
 #' \itemize{
 #' \item \code{noise=0}: No noise allowed.
@@ -1096,7 +1095,7 @@ NoiseScree <- function(result,matrix,type=c("Added","Total"),pattern=NULL,noise_
 #' # Make ClusterRowCoverage Plots
 #' ClusterRowCoverage(result=out,matrix=mat,maxCluster=20,noise=0.2)
 #' }
-ClusterRowCoverage <- function(result,matrix,maxCluster=20,
+ClusterRowCoverage <- function(result,matrix,maxCluster=20,rangeCluster=NULL,
                                noise=0.1,noise_select = 0,
                                plots=c(1:3),
                                verbose=TRUE,
@@ -1117,7 +1116,14 @@ ClusterRowCoverage <- function(result,matrix,maxCluster=20,
   
   
 
-  nrow <- length(2:maxCluster)
+  
+  if(is.null(rangeCluster)){
+    rangeCluster <- 2:maxCluster
+  }
+  nrow <- length(rangeCluster)
+  if(any(rangeCluster<2)){stop("The minimum number of clusters is 2.")}
+  
+  
   cov_df <- data.frame(clusters=rep(NA,nrow),NumberRows=rep(NA,nrow),RowPerc=rep(NA,nrow),FinalBC=rep(NA,nrow))
   
   if(verbose){
@@ -1142,7 +1148,7 @@ ClusterRowCoverage <- function(result,matrix,maxCluster=20,
     
     temp <- capture.output({
     
-    result2 <- workflow_mergeBC(result=result$info$BiclustInitial,tree=result$info$Tree,JI=NULL,number=i+1)
+    result2 <- workflow_mergeBC(result=result$info$BiclustInitial,tree=result$info$Tree,JI=NULL,number=rangeCluster[i])
     
     BC.Merge <- result2@info$BC.Merge
     MergedColPatterns <- lapply(as.list(seq_len(result2@Number)),FUN=function(pattern){
@@ -1168,7 +1174,7 @@ ClusterRowCoverage <- function(result,matrix,maxCluster=20,
     coverage <- c(NumberRows=round(nBC_rownames,0),RowPerc=round((nBC_rownames/nrow(matrix))*100,2))
 
     
-    cov_df[i,] <- c(i+1,coverage,result3@Number)
+    cov_df[i,] <- c(rangeCluster[i],coverage,result3@Number)
     
     if(verbose){
       setTxtProgressBar(pb,sum(1:i))
@@ -1179,7 +1185,7 @@ ClusterRowCoverage <- function(result,matrix,maxCluster=20,
   if(verbose){
     close(pb)
   }
-  
+
   if(1 %in% plots){
     if(plot.type=="device"){
       dev.new()
@@ -1187,6 +1193,7 @@ ClusterRowCoverage <- function(result,matrix,maxCluster=20,
       pdf(paste0(filename,".pdf"))
       FIRSTPLOT <- FALSE
     }
+    
     plot(cov_df$clusters,cov_df$RowPerc,main="Clusters vs Row Coverage Perc.",xlab="n clusters",ylab="Row CovPerc",pch=19)
     points(cov_df$clusters,cov_df$RowPerc,type="l")
     text(cov_df$clusters,cov_df$RowPerc,as.character(round(cov_df$RowPerc,2)),pos=3)
@@ -2149,7 +2156,15 @@ ColInfo <- function(result,matrix,plots=c(1,2),plot.type="device",filename="ColI
       FIRSTPLOT <- FALSE
     }
     col_t <- viridis(101)
-    biclustmember(x=matrix,bicResult=result,color=col_t)
+    
+    
+    if(!identical(as.numeric(as.vector(matrix)),as.numeric(as.logical(matrix)))){
+      biclustmember(x=matrix,bicResult=result,color=col_t)
+    }else{
+      biclustmember_bin(x=matrix,bicResult=result,color=col_t)
+    }
+    
+    
     # col_t <- diverge_hcl(101, h = c(0, 130))
     
     legend(c(0.1,1.2),c(as.character(min(matrix)),as.character(max(matrix))),col=c(col_t[1],col_t[length(col_t)]),xpd=TRUE,bty="n",pch=15)
@@ -2353,7 +2368,421 @@ BCInfo <- function(result,matrix){
 
 
 
+BCVariableInfo <- function(result,info,BC=1:result@Number,type="row",sign=FALSE,sign.factor.test="chisq",sign.alpha=0.05,sign.input=NULL,
+                           matrix=NULL,noise=NULL,
+                           plot=TRUE,plot.save=FALSE,plot.print=TRUE,plot.pdf=FALSE,filename="BCVariableInfo",...){
+  
+  ## PARAMETER CHECKS ##
+  if(!is.null(matrix)){
+    if(class(matrix)!="matrix"){stop("matrix parameter should contain a matrix object",call.=FALSE)}
+    if(!identical(as.numeric(as.vector(matrix)),as.numeric(as.logical(matrix)))){stop("matrix is not a binary matrix!",call.=FALSE)}
+    if(is.null(rownames(matrix))){rownames(matrix) <- paste0("Row",c(1:nrow(matrix)))}
+    if(is.null(colnames(matrix))){colnames(matrix) <- paste0("Col",c(1:ncol(matrix)))}
+    biclust_correctdim(result=result,matrix=matrix)
+    if(is.null(noise)){stop("Please set the noise parameter")}
+  }
+  if(!is.null(noise)){
+    if(noise<0){stop("noise can not be negative")}
+    if(is.null(matrix)){stop("A binary matrix needs to be provided in the matrix parameter")}
+    if(type!="row"){stop("Setting a noise subset is only available for type=\"row\"")}
+  }
+  
+  
+  if(class(result)!="Biclust" ){stop("result needs to be of class 'Biclust'")}  
+  
+  
+  if(is.null(colnames(info))){colnames(info) <- paste0("Var",c(1:ncol(info)))}
+  if(!(type %in% c("row","col"))){stop("type needs to be \"row\" or \"col\"")}
+  if(length(type)!=1){stop("type needs to be of length 1")}
+  if(!(sign.factor.test %in% c("chisq","fisher"))){stop("type needs to be \"chisq\" or \"fisher\"")}
+  if(length(sign.factor.test)!=1){stop("sign.factor.test needs to be of length 1")}
+  
+  if(nrow(info)!=switch(type,row=nrow(result@RowxNumber),col=ncol(result@NumberxCol))){stop("Incorrect number of rows in info parameter.")}
+  
+  if(!(class(BC)=="numeric" | class(BC)=="integer")){stop("BC should be a numeric vector")}
+  if(any(BC<0)){stop("BC cannot be negative")}
+  if(any(BC>result@Number)){stop(paste0("BC contains a unavailable BC. The biclustering result only has ",result@Number," BC's"))}
+  
+  
+  
+  # Add if clause for subsetting on noise levels (only for binary results and only for rows!)
+  if(!is.null(matrix) & !is.null(noise)){
+    # Overwrite RowxNumber
+    for(i.BC in 1:result@Number){
+      noiserows <- rowSums(!matrix[result@RowxNumber[,i.BC],result@NumberxCol[i.BC,]])
+      row_sel <- which(noiserows!=noise)
+      result@RowxNumber[which(result@RowxNumber[,i.BC])[row_sel],i.BC] <- FALSE
+    }
+  }
+  
+  
+  if(sign){
+    if(is.null(sign.input)){
+      out_test <- BCVariableTest(result = result,info=info,BC=BC,type=type,pairwise=FALSE,factor.test=sign.factor.test,alpha = sign.alpha)
+    }else{
+      if(identical(c("Inside_Outside","Pairwise"),names(sign.input))){
+        out_test <- sign.input
+      }else{
+        stop("sign.input is of incorrect format") 
+      }
+    }
+  }
+  
+  # BCVariableTest <- function(result,info,BC=1:result@Number,type="row",pairwise=TRUE,factor.test="chisq",alpha=0.05){
+  
+  BCrowdim <- colSums(result@RowxNumber)
+  BCcoldim <- rowSums(result@NumberxCol)
+  rowdim <- nrow(result@RowxNumber)
+  coldim <- ncol(result@NumberxCol)
+  
+  # save object depending on type
+  if(type=="row"){
+    result <- result@RowxNumber
+  }else if(type=="col"){
+    result <- t(result@NumberxCol)
+  }
+  
+  
+  
+  
+  
+  ##############################
+  # Loop through all Variables #
+  ##############################
+  
+  OUT <- vector("list",ncol(info))
+  names(OUT) <- colnames(info)
+  
+  for(i in 1:ncol(info)){
+    
+    # Do General and BC's
+    
+    if(class(info[,i])=="factor"){
+      
+      data_summary <- gather(as.data.frame(t(as.matrix(summary(info[,i])))),var,abs)
+      colnames(data_summary)[1] <- names(OUT)[i]
+      data_summary$perc <- data_summary$abs/nrow(info)
+      
+      
+      out_var <- lapply(as.list(BC),FUN=function(x){
+        index <- which(result[,x])
+        
+        temp_summary <- gather(as.data.frame(t(as.matrix(summary(info[index,i])))),var,abs)
+        colnames(temp_summary)[1] <- names(OUT)[i]
+        temp_summary$perc <- temp_summary$abs/length(index)
+        return(temp_summary)
+      })
+      out_var <- c(list(data_summary),out_var)
+      names(out_var) <- c(paste0("Data_",rowdim,"x",coldim),paste0("BC",BC,"_",BCrowdim[BC],"x",BCcoldim[BC]))
+      
+      OUT[[i]] <- out_var
+      
+    }
+    if((class(info[,i])=="numeric") | (class(info[,i])=="integer")){
+      
+      data_summary <- as.matrix(summary(info[,i]))
+      if(nrow(data_summary)==6){data_summary <- rbind(data_summary,"NA's" = 0)}
+      data_summary <- rbind(data_summary,Total = sum(info[,i],na.rm = TRUE))
+      
+      out_var <- do.call(cbind,lapply(as.list(BC),FUN=function(x){
+        index <- which(result[,x])
+        temp_summary <- as.matrix(summary(info[index,i]))
+        if(nrow(temp_summary)==6){temp_summary <- rbind(temp_summary,"NA's" = 0)}
+        return(rbind(temp_summary,Total = sum(info[index,i],na.rm = TRUE)))
+      }))
+      out_var <- cbind(data_summary,out_var)
+      colnames(out_var) <- c(paste0("Data_",rowdim,"x",coldim),paste0("BC",BC,"_",BCrowdim[BC],"x",BCcoldim[BC]))
+      
+      OUT[[i]] <- out_var
+    }
+  }
+  
+  
+  ################
+  ## MAKE PLOTS ##
+  ################
+  
+  if(plot){
+    
+    plot_var <- vector("list",ncol(info))
+    names(plot_var) <- colnames(info)
+    
+    
+    # If there is numeric variable data, collect it here already
+    vec_class <- sapply(info,FUN=class)
+    var_sel <- which((vec_class=="numeric") | (vec_class=="integer"))
+    if(length(var_sel)>0){
+      
+      plotinfo <- info[,var_sel]
+      plotinfo$BC <- paste0("Data_",rowdim,"x",coldim)
+      
+      plotinfo <- rbind(plotinfo,
+                        do.call(rbind,lapply(as.list(BC),FUN=function(x){
+                          info_temp <- info[which(result[,x]),var_sel]
+                          info_temp$BC <- paste0("BC",x,"_",BCrowdim[x],"x",BCcoldim[x])
+                          
+                          return(info_temp)
+                        }))
+      )
+      
+      if(sign){
+        temp <- out_test$Inside_Outside$sign[rep(1:nrow(out_test$Inside_Outside$sign),BCrowdim[BC]),var_sel]
+        temp <- rbind(matrix(0,nrow=nrow(info),ncol=ncol(temp)),as.matrix(temp))
+        colnames(temp) <- paste0("sign_",colnames(temp))
+        plotinfo <- cbind(plotinfo,temp)
+      }
+    }
+    
+    
+    
+    
+    # Get Factor Variable Data and Plot All Variables
+    for(i in 1:ncol(info)){
+      
+      
+      if(class(info[,i])=="factor"){
+        
+        if(sign){
+          
+          info_table <- lapply(as.list(1:length(OUT[[i]])),FUN=function(x){
+            temp <- cbind(OUT[[i]][[x]],type=rep(names(OUT[[i]])[x],nrow(OUT[[i]][[x]])))
+            
+            sel <- which(sapply(rownames(out_test$Inside_Outside$sign),FUN=function(xx){grepl(xx,names(OUT[[i]])[x])}))
+            if(length(sel)>0){
+              temp[,"type"] <- paste0(temp[,"type"],ifelse(out_test$Inside_Outside$sign[sel[1],colnames(temp)[1]]==0," (Not Sign)"," (Sign)"))
+            }else if(!grepl("Data",names(OUT[[i]])[x])){
+              temp[,"type"] <- paste0(temp[,"type"]," (Not Sign)")
+            }
+            
+            return(temp)
+          })
+          
+        }else{
+          info_table <- lapply(as.list(1:length(OUT[[i]])),FUN=function(x){
+            return(cbind(OUT[[i]][[x]],type=rep(names(OUT[[i]])[x],nrow(OUT[[i]][[x]]))))
+          })
+        }
+        
+        info_table <- do.call(rbind,info_table)
+        
+        plot_var[[i]] <- BCbarplot(info_table,sign=sign)
+      }
+      
+      if((class(info[,i])=="numeric") | (class(info[,i])=="integer")){
+        
+        if(sign){
+          plot_var[[i]] <- BCboxplot(plotinfo[,c(colnames(info)[i],"BC",paste0("sign_",colnames(info)[i]))],sign=sign)
+        }else{
+          plot_var[[i]] <- BCboxplot(plotinfo[,c(colnames(info)[i],"BC")])
+        }
+        
+      }
+    }
+  }
+  
+  
+  # Plot ggplot2
+  if(plot.pdf){
+    pdf(paste0(filename,".pdf"),...)
+    invisible(lapply(plot_var,FUN=print))
+    dev.off()
+  }
+  if(plot.print){
+    invisible(lapply(plot_var,FUN=print))
+  }
+  
+  
+  OUT2 <- list(Summary=OUT,plot=NULL)
+  if(plot.save){OUT2$plot <- plot_var}
+  return(OUT2)
+  
+} 
 
+# Returns unadjusted p-values -> do we need to adjust? (if so for number of BC's or number of vars?)
+BCVariableTest <- function(result,info,BC=1:result@Number,type="row",pairwise=TRUE,factor.test="chisq",alpha=0.05,...){
+  
+  # CHECK PARAMETERS
+  if(class(result)!="Biclust" ){stop("result needs to be of class 'Biclust'")}  
+  
+  
+  if(is.null(colnames(info))){colnames(info) <- paste0("Var",c(1:ncol(info)))}
+  if(!(type %in% c("row","col"))){stop("type needs to be \"row\" or \"col\"")}
+  if(length(type)!=1){stop("type needs to be of length 1")}
+  if(!(factor.test %in% c("chisq","fisher"))){stop("type needs to be \"chisq\" or \"fisher\"")}
+  if(length(factor.test)!=1){stop("factor.test needs to be of length 1")}
+  
+  
+  if(nrow(info)!=switch(type,row=nrow(result@RowxNumber),col=ncol(result@NumberxCol))){stop("Incorrect number of rows in info parameter.")}
+  
+  if(!(class(BC)=="numeric" | class(BC)=="integer")){stop("BC should be a numeric vector")}
+  if(any(BC<0)){stop("BC cannot be negative")}
+  if(any(BC>result@Number)){stop(paste0("BC contains a unavailable BC. The biclustering result only has ",result@Number," BC's"))}
+  
+  
+  # BCrowdim <- colSums(result@RowxNumber)
+  # BCcoldim <- rowSums(result@NumberxCol)
+  # rowdim <- nrow(result@RowxNumber)
+  # coldim <- ncol(result@NumberxCol)
+  
+  # save object depending on type
+  if(type=="row"){
+    result <- result@RowxNumber
+  }else if(type=="col"){
+    result <- t(result@NumberxCol)
+  }
+  
+  OUT <- list(Inside_Outside=NULL,Pairwise=NULL)
+  
+  ## Inside BC vs Outside BC ##
+  pvalues <- do.call(rbind,lapply(as.list(BC),FUN=function(x){
+    return(test_var(rows1=which(result[,x]),rows2=which(!result[,x]),info=info,factor.test = factor.test,...))
+  }))
+  pvalues <- as.data.frame(pvalues,row.names=paste0("BC",BC))
+  OUT$Inside_Outside <- list(pvalues=pvalues,sign=as.data.frame((pvalues<=alpha)+0))
+  
+  
+  ## Pairwise BC versus ##
+  if(pairwise){
+    pvalues <- as.data.frame(t(combn(BC,2)))
+    colnames(pvalues) <- c("BC_a","BC_b")
+    rownames(pvalues) <- paste0("BC",pvalues[,1],"_BC",pvalues[,2])
+    
+    pvalues <- cbind(pvalues,do.call(rbind,lapply(as.list(1:nrow(pvalues)),FUN=function(x){
+      return(test_var(rows1=which(result[,pvalues[x,1]]),rows2=which(result[,pvalues[x,2]]),info=info,factor.test = factor.test,...))
+    })))
+    pvalues <- as.data.frame(pvalues)
+    sign <- pvalues
+    sign[,-c(1,2)] <- (sign[,-c(1,2)]<=alpha)+0
+    OUT$Pairwise <- list(pvalues=pvalues,sign=as.data.frame(sign))
+  }
+  return(OUT)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+BCbarplot <- function(info_table,sign=FALSE){
+  
+  info_table[,1] <- as.factor(info_table[,1])
+  info_table$perc <- info_table$perc*100
+  info_table$type <- factor(info_table$type,levels=unique(info_table$type))
+  
+  return(ggplot(info_table,aes_string(x=colnames(info_table)[1],y="perc")) + geom_bar(stat="identity",aes_string(fill=colnames(info_table)[1])) +
+           geom_text(aes_string(label="abs",y="perc",col=colnames(info_table)[1]),nudge_y=5) + 
+           labs(y="Percentage") + coord_cartesian(ylim=c(0,100)) + facet_wrap(~type)+ ggtitle(colnames(info_table)[1])) 
+  
+  
+  
+}
+
+BCboxplot <- function(info_part,sign=FALSE){
+  
+  info_part$BC <- factor(info_part$BC,levels=unique(info_part$BC))
+  
+  if(sign){
+    info_part$Significant <- as.factor(info_part[,paste0("sign_",colnames(info_part)[1])])
+    
+    return(ggplot(info_part,aes_string(x="BC",y=colnames(info_part)[1])) + geom_boxplot(aes(col=BC,fill=Significant),alpha=0.7)+ ggtitle(colnames(info_part)[1]) + 
+             coord_flip() + stat_summary(fun.y=mean, geom="point",aes(col=BC)) + 
+             scale_fill_manual(values=c("white","grey"))+theme(legend.position="bottom"))
+  }else{
+    return(ggplot(info_part,aes_string(x="BC",y=colnames(info_part)[1])) + geom_boxplot(aes(col=BC) )+ ggtitle(colnames(info_part)[1]) + 
+             coord_flip() + stat_summary(fun.y=mean, geom="point",aes(col=BC))+theme(legend.position="bottom"))
+  }
+  
+}
+
+
+test_var <- function(rows1,rows2,info,factor.test,...){
+  
+  out <- 1:ncol(info)
+  names(out) <- colnames(info)
+  
+  for(i in 1:ncol(info)){
+    if(class(info[,i])=="factor"){
+      f1 <- info[rows1,i]
+      f2 <- info[rows2,i]
+      M <- rbind(table(f1),table(f2))
+      if(factor.test=="chisq"){
+        out[i] <- chisq.test(M)$p.value
+      }
+      if(factor.test=="fisher"){
+        out[i] <- fisher.test(M,...)$p.value
+      }
+      
+    }else if(class(info[,i])=="numeric" | class(info[,i])=="integer"){
+      out[i] <- t.test(info[rows1,i],info[rows2,i])$p.value
+    }
+  }
+  return(out)
+}
+
+
+
+biclustmember_bin <- function (bicResult, x, cl_label = "", which = NA, main = "BiCluster Membership Graph", 
+                               xlab = "Cluster", color = colorspace::diverge_hcl(101, h = c(0, 130)), 
+                               ...) 
+{
+  minx <- min(x)
+  maxx <- max(x)
+  mycolor <- color
+  nx <- dim(bicResult@NumberxCol)[1]
+  ny <- dim(bicResult@NumberxCol)[2]
+  xseq <- seq(0, 1, length.out = nx + 1)
+  xticks <- xseq[-length(xseq)] + xseq[2]/2
+  yseq <- seq(0, 1, length.out = ny + 1)
+  yticks <- yseq[-length(yseq)] + yseq[2]/2
+  midl <- ((7 * xseq[2])/45)
+  outl <- (xseq[2]/30)
+  if (is.na(which)) 
+    which <- 1:ny
+  plot.new()
+  
+  for (i in 1:nx) {
+    for (j in 1:ny) {
+      if (bicResult@NumberxCol[i, which[j]]) {
+        identper <- bicResult@RowxNumber[, i]
+        
+        inclustercol <- round(mean(x[identper, which[j]])*length(color),0)
+        outclustercol <- round(mean(x[!identper, which[j]])*length(color),0)
+        if(inclustercol==0){inclustercol <- 1}
+        if(outclustercol==0){outclustercol <- 1}
+        
+        # inclustercol <- (round(mean(x[identper, which[j]]), 
+        #                        2) - minx) * (100/(maxx - minx)) + 1
+        # outclustercol <- (round(mean(x[!identper, which[j]]), 
+        #                         2) - minx) * (100/(maxx - minx)) + 1
+        
+        rect(xseq[i] + outl, yseq[j], xticks[i] - midl, 
+             yseq[j + 1], col = mycolor[inclustercol],...)
+        rect(xticks[i] - midl, yseq[j], xticks[i] + 
+               midl, yseq[j + 1], col = mycolor[outclustercol],...)
+        rect(xticks[i] + midl, yseq[j], xseq[i + 1] - 
+               outl, yseq[j + 1], col = mycolor[inclustercol])
+      }
+      else {
+        rect(xseq[i] + outl, yseq[j], xseq[i + 1] - 
+               outl, yseq[j + 1])
+      }
+    }
+  }
+  
+  axis(1, at = xticks, labels = paste(cl_label, 1:length(xticks)), 
+       tick = F, ...)
+  axis(2, at = yticks, labels = colnames(x)[which], tick = F, 
+       las = 2, ...)
+  axis(4, at = yticks, labels = colnames(x)[which], tick = F, 
+       las = 2, ...)
+  title(main = main, xlab = xlab, ...)
+}
 
 
 
