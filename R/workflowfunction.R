@@ -9,7 +9,7 @@
 
 
 # TO DO:
-# - add documentation and export: BCVariableInfo and BCVariableTest
+# - add documentation and export: BCVariableInfo and BCVariableTest (add noise filter!)
 #     - still needs testing: type="col" and noise=0, 1, 2,...
 # - Autochoice of Rowcoverage + ylim 
 
@@ -2599,6 +2599,7 @@ BCVariableInfo <- function(result,info,BC=1:result@Number,type="row",sign=FALSE,
 
 # Returns unadjusted p-values -> do we need to adjust? (if so for number of BC's or number of vars?)
 # ... are for chisq.test and fisher.test options
+# Add noise filter!
 BCVariableTest <- function(result,info,BC=1:result@Number,type="row",pairwise=TRUE,pairwise.overlap="remove",
                            factor.test="chisq",alpha=0.05,...){
   
@@ -2659,10 +2660,15 @@ BCVariableTest <- function(result,info,BC=1:result@Number,type="row",pairwise=TR
           rows1 <- setdiff(rows1,rows12)
           rows2 <- setdiff(rows2,rows12)
         }
+        
+        if(length(rows1)==0 | length(rows2)==0){
+          return(rep(NA,ncol(info)))
+        }
       }
+      return(test_var(rows1=rows1,rows2=rows2,info=info,factor.test = factor.test,workspace=2e8))
       
       
-      return(test_var(rows1=rows1,rows2=rows2,info=info,factor.test = factor.test,...))
+      
     })))
     pvalues <- as.data.frame(pvalues)
     sign <- pvalues
