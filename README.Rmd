@@ -106,6 +106,8 @@ Looking for Noisy Biclusters in large data using BiBit (`bibit2`) often results 
 In order decrease the number of biclusters and find larger meaningful patterns which make up noisy biclusters, the following workflow (`BiBitWorkflow`) can be applied.  
 Note that this workflow is primarily used for data where there are many more rows (e.g. patients) than columns (e.g. symptoms). For example the workflow would discover larger meaningful symptom patterns which, conditioned on the allowed noise/zeros, subsets of the patients share.
 
+More information about the steps of the workflow can be found in the documentation of the `BiBitWorkflow` function. A more detailed discussion will be available in an upcoming paper. A small proof of concept where we apply the *BiBit workflow* on four generated data sets (perfect/noise, no overlap/column overlap) can be found [here]().
+
 
 ## Return Value
 
