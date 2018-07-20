@@ -1,3 +1,5 @@
+# Instead of creating new arff files from scratch, only change them (the top 2 matrix lines which contain the pattern)
+
 bibit3_alt <- function(matrix=NULL,minr=1,minc=2,noise=0,pattern_matrix=NULL,subpattern=TRUE,pattern_combinations=FALSE,arff_row_col=NULL,
                    extend_columns="none",extend_mincol=1,extend_limitcol=1,extend_noise=noise,extend_contained=FALSE){
   
