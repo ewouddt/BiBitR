@@ -12,7 +12,7 @@ UpdateBiclust_RowNoise(result, matrix, noise = 0.1, noise_select = 0,
 
 \item{matrix}{Accompanying binary data matrix which was used to obtain \code{result}.}
 
-\item{noise}{The new noise level which should be used in the rows of the biclusters. (default=\code{0.1}, namely allow 10\% noise.). Note that you can provide a vector of noise levels here (one for each BC) so that you can give each BC a separate noise level.
+\item{noise}{The new noise level which should be used in the rows of the biclusters. (default=\code{0.1}, namely allow 10\% noise.). Note that you can provide a vector of noise levels here (one for each BC or merged pattern) so that you can give each BC a separate noise level.
 \itemize{
 \item \code{noise=0}: No noise allowed.
 \item \code{0<noise<1}: The \code{noise} parameter will be a noise percentage. The number of allowed 0's in a row in the bicluster will depend on the column size of the bicluster.
